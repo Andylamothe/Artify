@@ -1,6 +1,6 @@
 "use client";
 
-import { artworks, artworksByTargetIndex } from "@/data/artworks";
+import { artworks as defaultArtworks } from "@/data/artworks";
 import { useArtworkAudio } from "@/hooks/ar/useArtworkAudio";
 import { useLowPowerMode } from "@/hooks/ar/useLowPowerMode";
 import { ArtworkConfig, TrackingStatus } from "@/types/ar";
@@ -11,6 +11,7 @@ import { MonaLisaScene } from "@/components/ar/scenes/MonaLisaScene";
 import { StarryNightScene } from "@/components/ar/scenes/StarryNightScene";
 import { ScreamScene } from "@/components/ar/scenes/ScreamScene";
 import { ARInfoPanel } from "@/components/ar/scenes/ARInfoPanel";
+import { ARCustomObjects } from "@/components/ar/scenes/ARCustomObjects";
 
 declare global {
   interface Window {
@@ -46,13 +47,16 @@ function SceneByType({
   onToggleMuted: () => void;
 }) {
   const panel = (
-    <ARInfoPanel
-      artwork={activeArtwork}
-      showDetails={showDetails}
-      muted={muted}
-      onToggleDetails={onToggleDetails}
-      onToggleMuted={onToggleMuted}
-    />
+    <>
+      <ARInfoPanel
+        artwork={activeArtwork}
+        showDetails={showDetails}
+        muted={muted}
+        onToggleDetails={onToggleDetails}
+        onToggleMuted={onToggleMuted}
+      />
+      <ARCustomObjects objects={activeArtwork.arObjects} active={active} />
+    </>
   );
 
   if (activeArtwork.arSceneType === "monaLisa") {
@@ -86,6 +90,7 @@ export default function ARExperience() {
   const started = mode !== "start";
   const [trackingStatus, setTrackingStatus] = useState<TrackingStatus>("idle");
   const [activeArtwork, setActiveArtwork] = useState<ArtworkConfig | null>(null);
+  const [artworkList, setArtworkList] = useState<ArtworkConfig[]>(defaultArtworks);
   const [scriptsReady, setScriptsReady] = useState(false);
   const [scriptsError, setScriptsError] = useState<string | null>(null);
   const [compatibilityHint, setCompatibilityHint] = useState<string | null>(null);
@@ -94,6 +99,10 @@ export default function ARExperience() {
   const mountedRef = useRef(true);
   const sceneMounted = mode === "tracking" && scriptsReady;
   const { lowPower, setLowPower } = useLowPowerMode();
+  const artworksByTargetIndex = useMemo(
+    () => new Map(artworkList.map((artwork) => [artwork.targetIndex, artwork])),
+    [artworkList],
+  );
 
   const shouldPlayAudio = trackingStatus === "detected";
   const { muted, toggleMuted, audioError, requiresManualPlay, tryPlayManually, pause } =
@@ -107,6 +116,24 @@ export default function ARExperience() {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/workbench/artworks", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((manifest: { artworks?: ArtworkConfig[] } | null) => {
+        if (cancelled || !manifest?.artworks?.length) return;
+        setArtworkList(manifest.artworks);
+      })
+      .catch(() => {
+        setArtworkList(defaultArtworks);
+      });
+
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -159,15 +186,16 @@ export default function ARExperience() {
   useEffect(() => {
     if (!sceneMounted) return;
 
-    const targetElements = artworks.map((artwork) =>
+    const targetElements = artworkList.map((artwork) =>
       document.getElementById(`target-${artwork.targetIndex}`)
     );
     const handlers: Array<() => void> = [];
 
-    targetElements.forEach((element, targetIndex) => {
+    targetElements.forEach((element, arrayIndex) => {
       if (!element) return;
+      const configuredTargetIndex = artworkList[arrayIndex]?.targetIndex;
       const onFound = () => {
-        const artwork = artworksByTargetIndex.get(targetIndex);
+        const artwork = artworksByTargetIndex.get(configuredTargetIndex);
         if (!artwork) return;
         setActiveArtwork(artwork);
         setShowArDetails(false);
@@ -199,7 +227,7 @@ export default function ARExperience() {
       sceneElement?.removeEventListener("arReady", onReady);
       sceneElement?.removeEventListener("arError", onError);
     };
-  }, [pause, sceneMounted]);
+  }, [artworkList, artworksByTargetIndex, pause, sceneMounted]);
 
   useEffect(() => {
     if (mode !== "tracking" || trackingStatus !== "starting") return;
@@ -256,7 +284,7 @@ export default function ARExperience() {
     };
   }, []);
 
-  const activeOrDefault = useMemo(() => activeArtwork ?? artworks[0], [activeArtwork]);
+  const activeOrDefault = useMemo(() => activeArtwork ?? artworkList[0], [activeArtwork, artworkList]);
 
   const startAR = async () => {
     if (isStarting) return;
@@ -357,7 +385,7 @@ export default function ARExperience() {
               cursor="rayOrigin: mouse; fuse: false"
               raycaster="objects: .ar-clickable; near: 0; far: 10000"
             />
-            {artworks.map((artwork) => (
+            {artworkList.map((artwork) => (
               <a-entity
                 key={artwork.id}
                 id={`target-${artwork.targetIndex}`}
@@ -379,7 +407,7 @@ export default function ARExperience() {
       ) : null}
 
       {mode === "fallback" || trackingStatus === "error" ? (
-        <FallbackMuseumMode activeArtwork={activeOrDefault} onSelectArtwork={setActiveArtwork} />
+        <FallbackMuseumMode activeArtwork={activeOrDefault} artworks={artworkList} onSelectArtwork={setActiveArtwork} />
       ) : null}
 
       {started ? (

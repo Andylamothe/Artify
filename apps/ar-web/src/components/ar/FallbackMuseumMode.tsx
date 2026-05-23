@@ -1,13 +1,14 @@
-import { artworks } from "@/data/artworks";
 import { ArtworkConfig } from "@/types/ar";
 
 interface Props {
   activeArtwork: ArtworkConfig | null;
+  artworks: ArtworkConfig[];
   onSelectArtwork: (artwork: ArtworkConfig) => void;
 }
 
-export function FallbackMuseumMode({ activeArtwork, onSelectArtwork }: Props) {
+export function FallbackMuseumMode({ activeArtwork, artworks, onSelectArtwork }: Props) {
   const selected = activeArtwork ?? artworks[0];
+  if (!selected) return null;
 
   return (
     <div className="fallback-root">

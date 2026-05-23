@@ -11,6 +11,7 @@ export const artworks: ArtworkConfig[] = [
     historyText:
       "Painted in Florence during the High Renaissance, the work became globally famous for its technique, mystery, and historical journey into the Louvre collection.",
     targetIndex: 0,
+    targetImageUrl: "/ar/images/workbench-demo-art.webp",
     audioUrl: "/ar/audio/mona-lisa.wav",
     historicalImages: ["/ar/images/mona-lisa-history-1.jpg"],
     arSceneType: "monaLisa",
@@ -35,6 +36,7 @@ export const artworks: ArtworkConfig[] = [
     historyText:
       "Created in Saint-Remy, the painting reflects van Gogh's expressive interpretation of the sky and remains one of the most recognized works in modern art history.",
     targetIndex: 1,
+    targetImageUrl: "/ar/images/starry-night-history-1.jpg",
     audioUrl: "/ar/audio/starry-night.wav",
     historicalImages: ["/ar/images/starry-night-history-1.jpg"],
     arSceneType: "starryNight",
@@ -59,6 +61,7 @@ export const artworks: ArtworkConfig[] = [
     historyText:
       "Part of Munch's Frieze of Life cycle, this work captures existential tension and became a major reference point for expressionism in the 20th century.",
     targetIndex: 2,
+    targetImageUrl: "/ar/images/the-scream-history-1.jpg",
     audioUrl: "/ar/audio/the-scream.wav",
     historicalImages: ["/ar/images/the-scream-history-1.jpg"],
     arSceneType: "scream",
