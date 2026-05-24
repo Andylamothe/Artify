@@ -8,8 +8,8 @@ const arExperienceSource = await readFile(
 );
 
 test("AR scene passes MindAR smoothing and target-loss tolerance config", () => {
-  assert.match(arExperienceSource, /filterMinCF: 0\.001/);
-  assert.match(arExperienceSource, /filterBeta: 10/);
-  assert.match(arExperienceSource, /warmupTolerance: 5/);
-  assert.match(arExperienceSource, /missTolerance: 12/);
+  assert.match(arExperienceSource, /filterMinCF: 0\.0005/);
+  assert.match(arExperienceSource, /filterBeta: 0\.1/);
+  assert.match(arExperienceSource, /warmupTolerance: 8/);
+  assert.match(arExperienceSource, /missTolerance: 24/);
 });

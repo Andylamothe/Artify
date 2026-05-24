@@ -11,6 +11,7 @@ const mockArtwork: ArtworkConfig = {
   historyText: 'Painted in Florence.',
   targetIndex: 0,
   audioUrl: '/ar/audio/mona-lisa.wav',
+  audioEnabled: true,
   historicalImages: [],
   arSceneType: 'monaLisa',
   colors: { primary: '#000', secondary: '#000', accent: '#000' },

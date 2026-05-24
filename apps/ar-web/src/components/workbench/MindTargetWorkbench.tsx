@@ -42,6 +42,7 @@ type UploadProgressItem = {
   percent: number;
   state: "uploading" | "done" | "error";
 };
+type VideoLibraryItem = { name: string; url: string; bytes: number; updatedAt: string };
 type ResizeHandle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 type MediaDimensions = { width: number; height: number; aspect: number };
 type ViewportState = { zoom: number; panX: number; panY: number };
@@ -109,6 +110,7 @@ const emptyArtwork = (targetIndex: number): ArtworkConfig => ({
   targetIndex,
   targetImageUrl: "",
   audioUrl: "",
+  audioEnabled: false,
   historicalImages: [],
   arSceneType: "monaLisa",
   colors: {
@@ -127,6 +129,7 @@ const emptyArtwork = (targetIndex: number): ArtworkConfig => ({
 export function MindTargetWorkbench() {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const targetInputRef = useRef<HTMLInputElement | null>(null);
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
   const transformDragRef = useRef<TransformDrag | null>(null);
   const panDragRef = useRef<PanDrag | null>(null);
   const viewportRef = useRef<ViewportState>({ zoom: 1, panX: 0, panY: 0 });
@@ -163,6 +166,7 @@ export function MindTargetWorkbench() {
   const [aiMotionObjectId, setAiMotionObjectId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ objectId: string; x: number; y: number } | null>(null);
   const [brushMode, setBrushMode] = useState(false);
+  const [audioPanelOpen, setAudioPanelOpen] = useState(false);
   const brushDrawingRef = useRef<string | null>(null);
   const [viewport, setViewport] = useState<ViewportState>({ zoom: 1, panX: 0, panY: 0 });
 
@@ -704,7 +708,10 @@ export function MindTargetWorkbench() {
       const payload = await uploadWorkbenchAsset(file, draft.id, (uploadProgress) =>
         updateUploadProgress(uploadId, uploadProgress),
       );
-      if (kind === "audio") updateDraft("audioUrl", payload.url);
+      if (kind === "audio") {
+        updateDraft("audioUrl", payload.url);
+        updateDraft("audioEnabled", true);
+      }
       if (kind === "image") updateDraft("historicalImages", [...draft.historicalImages, payload.url]);
       if (kind === "layer" && selectedLayer) {
         const nextObject = dimensions
@@ -1188,6 +1195,48 @@ export function MindTargetWorkbench() {
               <button type="button" className="stage-ai-motion-button" onClick={openAILivingArtStudio}>
                 Google AI Motion
               </button>
+              <div className="stage-audio-control">
+                <button
+                  type="button"
+                  className={`stage-audio-button ${draft.audioEnabled && draft.audioUrl ? "is-active" : ""}`}
+                  onClick={() => setAudioPanelOpen((open) => !open)}
+                  aria-expanded={audioPanelOpen}
+                >
+                  Audio guide
+                </button>
+                {audioPanelOpen ? (
+                  <div className="stage-audio-panel">
+                    <div>
+                      <span>Scene audio</span>
+                      <strong>{draft.audioUrl ? "Audio ready" : "No audio uploaded"}</strong>
+                    </div>
+                    <button type="button" onClick={() => audioInputRef.current?.click()}>
+                      Upload MP3
+                    </button>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={draft.audioEnabled}
+                        disabled={!draft.audioUrl}
+                        onChange={(event) => updateDraft("audioEnabled", event.target.checked)}
+                      />
+                      Active on scan
+                    </label>
+                    {draft.audioUrl ? <audio controls src={workbenchAssetPlaybackUrl(draft.audioUrl)} /> : null}
+                  </div>
+                ) : null}
+                <input
+                  ref={audioInputRef}
+                  className="sr-only"
+                  type="file"
+                  accept="audio/mpeg,audio/mp3,.mp3,audio/wav"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    if (file) void uploadAsset(file, "audio");
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </div>
               <div className="scene-select-group">
                 {sceneTypes.map((scene) => (
                   <button
@@ -1342,6 +1391,7 @@ export function MindTargetWorkbench() {
             {selectedObject ? (
               <ObjectInspector
                 object={selectedObject}
+                artworkId={draft.id}
                 existingImages={draft.historicalImages}
                 onChange={updateObject}
                 onDelete={() => deleteObject(selectedObject.id)}
@@ -1501,7 +1551,7 @@ function NewArtworkSetup({
           />
           {targetPreview ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={targetPreview} alt="" />
+            <img src={workbenchAssetPlaybackUrl(targetPreview)} alt="" />
           ) : (
             <div>
               <strong>Upload target image</strong>
@@ -1609,7 +1659,19 @@ function WorkbenchTabPanel({
 
       {activeTab === "assets" ? (
         <div className="drawer-grid assets-drawer">
-          <AssetDrop label="Audio narration" value={draft.audioUrl || "No audio file"} accept="audio/mpeg,audio/wav" onFile={(file) => onAsset(file, "audio")} />
+          <label className="drawer-toggle wide">
+            <input
+              type="checkbox"
+              checked={draft.audioEnabled}
+              disabled={!draft.audioUrl}
+              onChange={(event) => onDraftChange("audioEnabled", event.target.checked)}
+            />
+            <span>
+              <strong>Audio guide active</strong>
+              <small>{draft.audioUrl ? "Show the mobile player when this artwork is scanned." : "Upload an MP3 before activation."}</small>
+            </span>
+          </label>
+          <AssetDrop label="Audio narration" value={draft.audioUrl || "No audio file"} accept="audio/mpeg,audio/mp3,.mp3,audio/wav" onFile={(file) => onAsset(file, "audio")} />
           <PortfolioImageManager
             images={draft.historicalImages}
             disabled={isSaving}
@@ -1685,9 +1747,10 @@ function AFrameStagePreview({
 }) {
   const objects = artwork.arObjects ?? [];
   const plane = getPlaneSize(targetDimensions?.aspect ?? 0.72);
+  const previewImageSrc = workbenchAssetPlaybackUrl(targetPreview);
   const [previewState, setPreviewState] = useState({ src: "", loaded: false, failed: false });
-  const previewLoaded = previewState.src === targetPreview && previewState.loaded;
-  const previewFailed = previewState.src === targetPreview && previewState.failed;
+  const previewLoaded = previewState.src === previewImageSrc && previewState.loaded;
+  const previewFailed = previewState.src === previewImageSrc && previewState.failed;
 
   if (!targetPreview) {
     return (
@@ -1711,11 +1774,11 @@ function AFrameStagePreview({
       <div className="aframe-preview-image-layer">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={targetPreview}
+          src={previewImageSrc}
           alt=""
-          onLoad={() => setPreviewState({ src: targetPreview, loaded: true, failed: false })}
+          onLoad={() => setPreviewState({ src: previewImageSrc, loaded: true, failed: false })}
           onError={() => {
-            setPreviewState({ src: targetPreview, loaded: true, failed: true });
+            setPreviewState({ src: previewImageSrc, loaded: true, failed: true });
           }}
         />
         {!previewLoaded ? (
@@ -1736,7 +1799,7 @@ function AFrameStagePreview({
       >
         <a-assets>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img id={`target-preview-${artwork.id}`} src={targetPreview} alt="" crossOrigin="anonymous" />
+          <img id={`target-preview-${artwork.id}`} src={previewImageSrc} alt="" crossOrigin="anonymous" />
         </a-assets>
         <a-entity light="type: ambient; color: #ffffff; intensity: 0.8" />
         <a-entity light="type: directional; color: #ffffff; intensity: 0.65" position="0 2 2" />
@@ -1859,7 +1922,7 @@ function AFrameObject({ object }: { object: ARObjectConfig }) {
         />
         {activeItem ? (
           <a-image
-            src={activeItem.src}
+            src={workbenchAssetPlaybackUrl(activeItem.src)}
             alpha-test="0.5"
             width={object.width}
             height={object.height}
@@ -1910,7 +1973,7 @@ function AFrameObject({ object }: { object: ARObjectConfig }) {
   }
 
   if ((object.type === "image" || object.type === "gif") && object.src) {
-    return <a-image src={object.src} width={object.width} height={object.height} material={`transparent: true; opacity: ${object.opacity}`} />;
+    return <a-image src={workbenchAssetPlaybackUrl(object.src)} width={object.width} height={object.height} material={`transparent: true; opacity: ${object.opacity}`} />;
   }
 
   return <a-plane width={object.width} height={object.height} color={object.color} material={`transparent: true; opacity: ${object.opacity}`} />;
@@ -1963,7 +2026,7 @@ function CanvasObject({
       onContextMenu={onContextMenu}
       title={object.name}
     >
-      <ObjectPreview object={object} selected={selected} />
+      <ObjectPreview object={object} />
       {selected ? (
         <span className="gizmo-controls" aria-hidden="true">
           {handles.map((handle) => (
@@ -1989,16 +2052,16 @@ function CanvasObject({
   );
 }
 
-function ObjectPreview({ object, selected }: { object: ARObjectConfig; selected: boolean }) {
+function ObjectPreview({ object }: { object: ARObjectConfig }) {
+  if (object.type === "text") return <span>{object.text || "Text"}</span>;
+
   if ((object.type === "image" || object.type === "gif") && object.src) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={object.src} alt="" />;
+    return <img src={workbenchAssetPlaybackUrl(object.src)} alt="" />;
   }
   if (object.type === "video" && object.src) {
     return <video src={workbenchAssetPlaybackUrl(object.src)} muted loop playsInline autoPlay preload="auto" />;
   }
-  if (!selected) return null;
-  if (object.type === "text") return <span>{object.text || "Text"}</span>;
   if (object.type === "brush") {
     return (
       <span>
@@ -2020,7 +2083,7 @@ function ObjectPreview({ object, selected }: { object: ARObjectConfig; selected:
     const firstItem = object.portfolioItems?.[0];
     if (firstItem?.src) {
       // eslint-disable-next-line @next/next/no-img-element
-      return <img src={firstItem.src} alt="" />;
+      return <img src={workbenchAssetPlaybackUrl(firstItem.src)} alt="" />;
     }
     return (
       <span>
@@ -2102,6 +2165,7 @@ function SceneInspector({
 
 function ObjectInspector({
   object,
+  artworkId,
   existingImages,
   onChange,
   onDelete,
@@ -2110,6 +2174,7 @@ function ObjectInspector({
   onMotionBrush,
 }: {
   object: ARObjectConfig;
+  artworkId: string;
   existingImages: string[];
   onChange: (object: ARObjectConfig) => void;
   onDelete: () => void;
@@ -2126,6 +2191,11 @@ function ObjectInspector({
   };
   const updateScale = (axis: "x" | "y" | "z", value: number) => {
     onChange({ ...object, scale: { ...object.scale, [axis]: value } });
+  };
+  const selectVideoFromLibrary = async (item: VideoLibraryItem) => {
+    const playbackUrl = workbenchAssetPlaybackUrl(item.url);
+    const dimensions = await loadMediaDimensions(playbackUrl, "video").catch(() => null);
+    onChange(dimensions ? applyMediaAspectRatio({ ...object, src: item.url }, dimensions.aspect) : { ...object, src: item.url });
   };
 
   return (
@@ -2231,6 +2301,13 @@ function ObjectInspector({
       ) : (
         <>
           <AssetDrop label="Object asset" value={object.src || "No asset selected"} accept={assetAcceptFor(object.type)} onFile={onUpload} />
+          {object.type === "video" ? (
+            <VideoLibraryPicker
+              artworkId={artworkId}
+              selectedUrl={object.src || ""}
+              onSelect={(item) => void selectVideoFromLibrary(item)}
+            />
+          ) : null}
           {object.type === "image" || object.type === "gif" ? (
             <button type="button" className="motion-brush-launch" onClick={onMotionBrush}>
               Motion Brush
@@ -2271,6 +2348,85 @@ function ObjectInspector({
       <button type="button" className="delete-layer-action" onClick={onDelete}>
         Delete object
       </button>
+    </div>
+  );
+}
+
+function VideoLibraryPicker({
+  artworkId,
+  selectedUrl,
+  onSelect,
+}: {
+  artworkId: string;
+  selectedUrl: string;
+  onSelect: (item: VideoLibraryItem) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<VideoLibraryItem[]>([]);
+  const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    fetch(`/api/workbench/assets?artworkId=${encodeURIComponent(artworkId)}&type=video`, { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Could not load video library.");
+        return response.json() as Promise<{ assets?: VideoLibraryItem[] }>;
+      })
+      .then((payload) => {
+        if (cancelled) return;
+        setItems(Array.isArray(payload.assets) ? payload.assets : []);
+        setStatus("");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setItems([]);
+        setStatus(error instanceof Error ? error.message : "Could not load video library.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [artworkId, open]);
+
+  return (
+    <div className="video-library-picker wide">
+      <button
+        type="button"
+        onClick={() => {
+          const nextOpen = !open;
+          setOpen(nextOpen);
+          if (nextOpen) {
+            setItems([]);
+            setStatus("Loading video library...");
+          }
+        }}
+      >
+        Use from library
+      </button>
+      {open ? (
+        <div className="video-library-list">
+          {status ? <p>{status}</p> : null}
+          {!status && items.length === 0 ? <p>No server videos for this artwork yet.</p> : null}
+          {items.map((item) => {
+            const selected = item.url === selectedUrl || workbenchAssetPlaybackUrl(item.url) === selectedUrl;
+            return (
+              <button
+                key={item.url}
+                type="button"
+                className={selected ? "is-selected" : ""}
+                onClick={() => onSelect(item)}
+                aria-pressed={selected}
+              >
+                <input type="checkbox" checked={selected} readOnly tabIndex={-1} aria-hidden="true" />
+                <span>
+                  <strong>{formatAssetName(item.name)}</strong>
+                  <small>{formatBytes(item.bytes)}</small>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2342,7 +2498,7 @@ function PortfolioObjectEditor({
               <div key={`${imageUrl}-${index}`} className={`portfolio-select-row ${selected ? "is-selected" : ""}`}>
                 <button type="button" onClick={() => toggleExistingImage(imageUrl)} aria-pressed={selected}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imageUrl} alt="" />
+                  <img src={workbenchAssetPlaybackUrl(imageUrl)} alt="" />
                   <span>{selected ? "Selected" : "Select"}</span>
                 </button>
                 {item ? (
@@ -2363,7 +2519,7 @@ function PortfolioObjectEditor({
             <div key={item.id} className="portfolio-select-row is-selected">
               <button type="button" onClick={() => updateItems(items.filter((candidate) => candidate.id !== item.id))}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.src} alt="" />
+                <img src={workbenchAssetPlaybackUrl(item.src)} alt="" />
                 <span>Remove</span>
               </button>
               <input
@@ -2419,7 +2575,7 @@ function PortfolioImageManager({
         {images.map((imageUrl, index) => (
           <figure key={`${imageUrl}-${index}`} className="portfolio-thumb">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt="" />
+            <img src={workbenchAssetPlaybackUrl(imageUrl)} alt="" />
             <figcaption>
               <span>Photo {index + 1}</span>
               <button type="button" onClick={() => onRemove(imageUrl)} aria-label={`Remove photo ${index + 1}`}>
@@ -2601,6 +2757,8 @@ function normalizeDraft(artwork: ArtworkConfig): ArtworkConfig {
     id,
     targetIndex: Number.isFinite(artwork.targetIndex) ? artwork.targetIndex : 0,
     targetImageUrl: artwork.targetImageUrl || "",
+    audioUrl: artwork.audioUrl || "",
+    audioEnabled: Boolean(artwork.audioEnabled && artwork.audioUrl),
     effects: {
       particleCount: clamp(artwork.effects.particleCount, 20, 150),
       lowPowerParticleCount: clamp(artwork.effects.lowPowerParticleCount, 10, 80),
@@ -3114,6 +3272,13 @@ function formatBytes(value: number) {
   if (value < 1024) return `${Math.max(0, Math.round(value))} B`;
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatAssetName(value: string) {
+  return value
+    .replace(/^\d+-/, "")
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[-_]+/g, " ");
 }
 
 function slugify(value: string) {

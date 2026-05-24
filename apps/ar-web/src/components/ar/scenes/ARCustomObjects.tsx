@@ -128,7 +128,7 @@ function CustomObject({ artworkId, object }: { artworkId: string; object: ARObje
   if ((object.type === "image" || object.type === "gif") && object.src) {
     return (
       <a-image
-        src={object.src}
+        src={workbenchAssetPlaybackUrl(object.src)}
         width={object.width}
         height={object.height}
         material={`transparent: true; opacity: ${object.opacity}`}
@@ -149,7 +149,7 @@ function CustomObject({ artworkId, object }: { artworkId: string; object: ARObje
 function PortfolioObject({ object }: { object: ARObjectConfig }) {
   const items = useMemo(() => object.portfolioItems?.filter((item) => item.src) ?? [], [object.portfolioItems]);
   const [currentItem, setCurrentItem] = useState(0);
-  const activeIndex = items.length ? currentItem % items.length : 0;
+  const activeIndex = items.length ? ((currentItem % items.length) + items.length) % items.length : 0;
   const activeItem = items[activeIndex];
   const canStep = items.length > 1;
 
@@ -167,19 +167,16 @@ function PortfolioObject({ object }: { object: ARObjectConfig }) {
         width="2"
         position="0 0.4 0"
       />
-      {items.length ? (
-        items.map((item, index) => (
-          <a-image
-            key={item.id || `${item.src}-${index}`}
-            src={item.src}
-            visible={index === activeIndex}
-            alpha-test="0.5"
-            position="0 0 0"
-            height={object.height}
-            width={object.width}
-            material={`transparent: true; opacity: ${object.opacity}`}
-          />
-        ))
+      {activeItem ? (
+        <a-image
+          key={`${object.id}-portfolio-active-${activeItem.id || activeIndex}`}
+          src={workbenchAssetPlaybackUrl(activeItem.src)}
+          alpha-test="0.5"
+          position="0 0 0"
+          height={object.height}
+          width={object.width}
+          material={`transparent: true; opacity: ${object.opacity}`}
+        />
       ) : (
         <a-plane
           width={object.width}
@@ -198,7 +195,7 @@ function PortfolioObject({ object }: { object: ARObjectConfig }) {
         width="0.15"
         onClick={(event: Event) => {
           event.stopPropagation();
-          step(1);
+          step(-1);
         }}
       />
       <a-image
@@ -211,7 +208,7 @@ function PortfolioObject({ object }: { object: ARObjectConfig }) {
         width="0.15"
         onClick={(event: Event) => {
           event.stopPropagation();
-          step(-1);
+          step(1);
         }}
       />
     </a-entity>
@@ -222,8 +219,13 @@ function cssSafeId(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, "-");
 }
 
+function workbenchAssetPlaybackUrl(url: string) {
+  if (!url.startsWith("/ar/workbench/assets/")) return url;
+  return url.replace(/^\/ar\/workbench\/assets\//, "/api/workbench/assets/");
+}
+
 function isInteractiveObject(object: ARObjectConfig) {
-  return object.type === "button" || object.type === "panel" || !!object.actionType;
+  return object.type === "button" || object.type === "panel" || (!!object.actionType && object.actionType !== "none");
 }
 
 function brushAnimationAttribute(object: ARObjectConfig, index: number) {

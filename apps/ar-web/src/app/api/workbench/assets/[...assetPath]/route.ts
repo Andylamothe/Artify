@@ -101,10 +101,16 @@ function contentTypeFor(filePath: string) {
   if (extension === ".mp4") return "video/mp4";
   if (extension === ".webm") return "video/webm";
   if (extension === ".mov") return "video/quicktime";
-  if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
+  if (extension === ".jpg" || extension === ".jpeg" || extension === ".jfif") return "image/jpeg";
   if (extension === ".png") return "image/png";
   if (extension === ".webp") return "image/webp";
   if (extension === ".gif") return "image/gif";
+  if (extension === ".avif") return "image/avif";
+  if (extension === ".bmp") return "image/bmp";
+  if (extension === ".svg") return "image/svg+xml";
+  if (extension === ".tif" || extension === ".tiff") return "image/tiff";
+  if (extension === ".heic") return "image/heic";
+  if (extension === ".heif") return "image/heif";
   if (extension === ".mp3") return "audio/mpeg";
   if (extension === ".wav") return "audio/wav";
   if (extension === ".glb") return "model/gltf-binary";

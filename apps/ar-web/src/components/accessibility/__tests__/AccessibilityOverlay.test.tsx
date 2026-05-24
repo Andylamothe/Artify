@@ -12,6 +12,7 @@ const workbenchArtwork: ArtworkConfig = {
   historyText: 'History',
   targetIndex: 1,
   audioUrl: '/ar/audio/starry-night.wav',
+  audioEnabled: true,
   historicalImages: [],
   arSceneType: 'starryNight',
   colors: { primary: '#000', secondary: '#111', accent: '#222' },

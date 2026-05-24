@@ -31,3 +31,21 @@ test("AR renderer draws a MindAR-style portfolio carousel with icon arrows", () 
   assert.match(arCustomObjectsSource, /src="#icon-right"/);
   assert.match(arCustomObjectsSource, /portfolioItems/);
 });
+
+test("portfolio carousel swaps the active A-Frame image instead of toggling hidden images", () => {
+  assert.match(arCustomObjectsSource, /key=\{`\$\{object\.id\}-portfolio-active-\$\{activeItem\.id \|\| activeIndex\}`\}/);
+  assert.doesNotMatch(arCustomObjectsSource, /items\.map\(\(item, index\) => \(\s*<a-image[\s\S]*visible=\{index === activeIndex\}/);
+  assert.match(arCustomObjectsSource, /id=\{`\$\{object\.id\}-portfolio-left-button`\}[\s\S]*step\(-1\)/);
+  assert.match(arCustomObjectsSource, /id=\{`\$\{object\.id\}-portfolio-right-button`\}[\s\S]*step\(1\)/);
+});
+
+test("AR portfolio panel also replaces the active photo texture when stepping", async () => {
+  const arExperienceSource = await readFile(
+    new URL("../src/components/ar/ARExperience.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(arExperienceSource, /const activePanelImage = visibleImages\[currentIndex\];/);
+  assert.match(arExperienceSource, /key=\{`\$\{artwork\.id\}-portfolio-active-\$\{currentIndex\}-\$\{activePanelImage\}`\}/);
+  assert.doesNotMatch(arExperienceSource, /visibleImages\.map\(\(image, index\) => \(\s*<a-image[\s\S]*visible=\{index === currentIndex\}/);
+});

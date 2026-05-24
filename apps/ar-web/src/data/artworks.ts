@@ -175,6 +175,7 @@ export const artworks: ArtworkConfig[] = [
     targetIndex: 0,
     targetImageUrl: "/ar/images/workbench-demo-art.webp",
     audioUrl: "/ar/audio/mona-lisa.wav",
+    audioEnabled: true,
     historicalImages: ["/ar/images/mona-lisa-history-1.jpg"],
     arSceneType: "monaLisa",
     colors: {
@@ -200,6 +201,7 @@ export const artworks: ArtworkConfig[] = [
     targetIndex: 1,
     targetImageUrl: "/ar/images/starry-night-history-1.jpg",
     audioUrl: "/ar/audio/starry-night.wav",
+    audioEnabled: true,
     historicalImages: ["/ar/images/starry-night-history-1.jpg"],
     arSceneType: "starryNight",
     colors: {
@@ -226,6 +228,7 @@ export const artworks: ArtworkConfig[] = [
     targetIndex: 2,
     targetImageUrl: "/ar/images/the-scream-history-1.jpg",
     audioUrl: "/ar/audio/the-scream.wav",
+    audioEnabled: true,
     historicalImages: ["/ar/images/the-scream-history-1.jpg"],
     arSceneType: "scream",
     colors: {

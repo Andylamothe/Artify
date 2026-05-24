@@ -52,6 +52,7 @@ function normalizeArtwork(artwork: ArtworkConfig, index: number): ArtworkConfig 
       (artwork.id === "mona-lisa" ? "/ar/images/workbench-demo-art.webp" : artwork.historicalImages?.[0]) ||
       "",
     audioUrl: starryNightLike ? artwork.audioUrl || "/ar/audio/starry-night.wav" : artwork.audioUrl || "",
+    audioEnabled: typeof artwork.audioEnabled === "boolean" ? artwork.audioEnabled : Boolean(artwork.audioUrl),
     historicalImages: starryNightLike
       ? uniqueStrings([...(Array.isArray(artwork.historicalImages) ? artwork.historicalImages : []), artwork.targetImageUrl])
       : Array.isArray(artwork.historicalImages)

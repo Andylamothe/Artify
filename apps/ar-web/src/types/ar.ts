@@ -47,6 +47,7 @@ export interface ArtworkConfig {
   targetIndex: number;
   targetImageUrl?: string;
   audioUrl: string;
+  audioEnabled: boolean;
   historicalImages: string[];
   arSceneType: ArtworkSceneType;
   colors: {

@@ -4,9 +4,10 @@ import { artworks as defaultArtworks } from "@/data/artworks";
 import { useArtworkAudio } from "@/hooks/ar/useArtworkAudio";
 import { useLowPowerMode } from "@/hooks/ar/useLowPowerMode";
 import { ARObjectConfig, ArtworkConfig, TrackingStatus } from "@/types/ar";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ArtworkOverlay } from "@/components/ar/ArtworkOverlay";
 import { FallbackMuseumMode } from "@/components/ar/FallbackMuseumMode";
+import RoomArtworkAR from "@/components/ar/RoomArtworkAR";
 import { MonaLisaScene } from "@/components/ar/scenes/MonaLisaScene";
 import { StarryNightScene } from "@/components/ar/scenes/StarryNightScene";
 import { ScreamScene } from "@/components/ar/scenes/ScreamScene";
@@ -20,10 +21,10 @@ const MINDSCRIPTS = [
 ];
 
 const MINDAR_TRACKING_CONFIG = {
-  filterMinCF: 0.001,
-  filterBeta: 10,
-  warmupTolerance: 5,
-  missTolerance: 12,
+  filterMinCF: 0.0005,
+  filterBeta: 0.1,
+  warmupTolerance: 8,
+  missTolerance: 24,
 };
 
 function SceneByType({
@@ -83,6 +84,24 @@ function SceneByType({
 }
 
 export default function ARExperience() {
+  const roomArtworkId = useSyncExternalStore(
+    (onStoreChange) => {
+      queueMicrotask(onStoreChange);
+      window.addEventListener("popstate", onStoreChange);
+      return () => window.removeEventListener("popstate", onStoreChange);
+    },
+    () => new URLSearchParams(window.location.search).get("artwork"),
+    () => null,
+  );
+
+  if (roomArtworkId) {
+    return <RoomArtworkAR artworkId={roomArtworkId} />;
+  }
+
+  return <ImageTrackingARExperience />;
+}
+
+function ImageTrackingARExperience() {
   const [mode, setMode] = useState<"start" | "tracking-loading" | "tracking" | "fallback">(
     "start"
   );
@@ -120,7 +139,20 @@ export default function ARExperience() {
   );
 
   const shouldPlayAudio = trackingStatus === "detected";
-  const { muted, toggleMuted, audioError, requiresManualPlay, tryPlayManually, pause } =
+  const {
+    muted,
+    toggleMuted,
+    audioError,
+    requiresManualPlay,
+    tryPlayManually,
+    isPlaying,
+    currentTime,
+    duration,
+    togglePlayback,
+    seekBy,
+    seekToRatio,
+    pause,
+  } =
     useArtworkAudio({
       started,
       activeArtwork,
@@ -429,24 +461,11 @@ export default function ARExperience() {
   return (
     <div className="ar-page">
       {mode === "start" ? (
-        <div className="start-screen">
-          <h1>Museum Image Tracking</h1>
-          <p>Start the camera, point it at a compiled MindAR target, and the 3D scene will attach to the artwork.</p>
-          {compatibilityHint ? <p className="compat-note">{compatibilityHint}</p> : null}
-          <button type="button" className="primary-btn" onClick={startAR} disabled={isStarting}>
-            {isStarting ? "Starting..." : "Start Image Tracking"}
-          </button>
-          <button
-            type="button"
-            className="chip"
-            onClick={() => {
-              setMode("fallback");
-              setTrackingStatus("scanning");
-            }}
-          >
-            Fallback preview
-          </button>
-        </div>
+        <ARStartLanding
+          compatibilityHint={compatibilityHint}
+          isStarting={isStarting}
+          onStart={startAR}
+        />
       ) : null}
 
       {mode === "tracking-loading" && !scriptsReady ? (
@@ -542,6 +561,21 @@ export default function ARExperience() {
         />
       ) : null}
 
+      {started && activeArtwork?.audioEnabled && activeArtwork.audioUrl ? (
+        <ArtworkAudioPlayer
+          artwork={activeArtwork}
+          isPlaying={isPlaying}
+          currentTime={currentTime}
+          duration={duration}
+          muted={muted}
+          onTogglePlayback={togglePlayback}
+          onSeekBackward={() => seekBy(-10)}
+          onSeekForward={() => seekBy(10)}
+          onSeekToRatio={seekToRatio}
+          onToggleMuted={toggleMuted}
+        />
+      ) : null}
+
       {started ? (
         <AccessibilityOverlay
           enabled={voiceAssistantEnabled}
@@ -567,6 +601,128 @@ export default function ARExperience() {
   );
 }
 
+function ARStartLanding({
+  compatibilityHint,
+  isStarting,
+  onStart,
+}: {
+  compatibilityHint: string | null;
+  isStarting: boolean;
+  onStart: () => void;
+}) {
+  const steps = [
+    { number: "01", title: "Point camera", copy: "Aim your phone at a registered artwork." },
+    { number: "02", title: "Detect artwork", copy: "MindAR locks onto the image target." },
+    { number: "03", title: "Explore AR layers", copy: "Photos, audio, video and portfolio pieces appear in place." },
+  ];
+
+  return (
+    <main className="ar-start-landing">
+      <div className="ar-start-hero" aria-hidden="true" />
+      <div className="ar-start-shade" aria-hidden="true" />
+      <div className="ar-start-scan-frame" aria-hidden="true">
+        <span />
+      </div>
+      <div className="ar-start-pulse" aria-hidden="true" />
+      <section className="ar-start-content" aria-label="Artify AR scanner introduction">
+        <div className="ar-start-copy">
+          <p className="ar-start-label">Artify WebAR</p>
+          <h1>
+            Scan an artwork.
+            <span>Watch it come alive.</span>
+          </h1>
+          <p className="ar-start-text">
+            Open the camera, frame the artwork, and unlock the artist story with anchored images, audio and interactive portfolio layers.
+          </p>
+          {compatibilityHint ? <p className="compat-note ar-start-note">{compatibilityHint}</p> : null}
+          <div className="ar-start-actions">
+            <button type="button" className="ar-start-primary" onClick={onStart} disabled={isStarting}>
+              {isStarting ? "Starting..." : "Start scanning"}
+            </button>
+          </div>
+        </div>
+        <div className="ar-start-steps" aria-label="How scanning works">
+          {steps.map((step) => (
+            <article key={step.number}>
+              <span>{step.number}</span>
+              <strong>{step.title}</strong>
+              <p>{step.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function ArtworkAudioPlayer({
+  artwork,
+  isPlaying,
+  currentTime,
+  duration,
+  muted,
+  onTogglePlayback,
+  onSeekBackward,
+  onSeekForward,
+  onSeekToRatio,
+  onToggleMuted,
+}: {
+  artwork: ArtworkConfig;
+  isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  muted: boolean;
+  onTogglePlayback: () => void;
+  onSeekBackward: () => void;
+  onSeekForward: () => void;
+  onSeekToRatio: (ratio: number) => void;
+  onToggleMuted: () => void;
+}) {
+  const progress = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
+
+  return (
+    <div className="artwork-audio-player" aria-label="Artwork audio guide player">
+      <div className="audio-player-copy">
+        <span>Audio guide</span>
+        <strong>{artwork.title}</strong>
+      </div>
+      <div className="audio-player-controls">
+        <button type="button" onClick={onSeekBackward} aria-label="Rewind 10 seconds">
+          -10
+        </button>
+        <button type="button" className="audio-play-toggle" onClick={onTogglePlayback} aria-label={isPlaying ? "Pause audio" : "Play audio"}>
+          {isPlaying ? "Pause" : "Play"}
+        </button>
+        <button type="button" onClick={onSeekForward} aria-label="Forward 10 seconds">
+          +10
+        </button>
+        <button type="button" onClick={onToggleMuted} aria-label={muted ? "Unmute audio" : "Mute audio"}>
+          {muted ? "Muted" : "Sound"}
+        </button>
+      </div>
+      <div className="audio-timeline">
+        <span>{formatAudioTime(currentTime)}</span>
+        <input
+          type="range"
+          min={0}
+          max={1000}
+          value={Math.round(progress * 10)}
+          onChange={(event) => onSeekToRatio(Number(event.currentTarget.value) / 1000)}
+          aria-label="Audio timeline"
+        />
+        <span>{duration > 0 ? formatAudioTime(duration) : "--:--"}</span>
+      </div>
+    </div>
+  );
+}
+
+function formatAudioTime(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return "0:00";
+  const minutes = Math.floor(value / 60);
+  const seconds = Math.floor(value % 60);
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 function ARTargetPanel({
   artwork,
   mode,
@@ -585,6 +741,7 @@ function ARTargetPanel({
   const images = artwork.historicalImages.length ? artwork.historicalImages : artwork.targetImageUrl ? [artwork.targetImageUrl] : [];
   const visibleImages = images.slice(0, 8);
   const currentIndex = visibleImages.length ? galleryIndex % visibleImages.length : 0;
+  const activePanelImage = visibleImages[currentIndex];
   const imageWidth = 0.92;
   const imageHeight = 0.52;
 
@@ -618,18 +775,15 @@ function ARTargetPanel({
         width="1.8"
         position="0 0.35 0.018"
       />
-      {visibleImages.length ? (
-        visibleImages.map((image, index) => (
-          <a-image
-            key={`${artwork.id}-portfolio-${image}-${index}`}
-            src={image}
-            visible={index === currentIndex}
-            alpha-test="0.5"
-            position="0 0.02 0.026"
-            width={imageWidth}
-            height={imageHeight}
-          />
-        ))
+      {activePanelImage ? (
+        <a-image
+          key={`${artwork.id}-portfolio-active-${currentIndex}-${activePanelImage}`}
+          src={workbenchAssetPlaybackUrl(activePanelImage)}
+          alpha-test="0.5"
+          position="0 0.02 0.026"
+          width={imageWidth}
+          height={imageHeight}
+        />
       ) : (
         <a-text
           value="No images yet"
@@ -807,7 +961,7 @@ function ARPhotoCarousel({
       <div className="ar-photo-carousel">
         {currentImage ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={currentImage} alt="" />
+          <img src={workbenchAssetPlaybackUrl(currentImage)} alt="" />
         ) : (
           <p className="ar-photo-empty">{emptyLabel}</p>
         )}

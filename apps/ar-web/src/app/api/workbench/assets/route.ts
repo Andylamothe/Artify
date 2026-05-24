@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export const runtime = "nodejs";
@@ -24,6 +24,43 @@ const allowedTypes = new Set([
   "model/gltf+json",
   "application/octet-stream",
 ]);
+
+const videoExtensions = new Set([".mp4", ".webm", ".mov"]);
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const artworkId = sanitizeSegment(searchParams.get("artworkId") || "shared");
+  const typeParam = searchParams.get("type") || "all";
+  const shouldFilterVideos = typeParam === "video";
+  const absoluteDir = path.join(process.cwd(), "public", "ar", "workbench", "assets", artworkId);
+
+  let entries;
+  try {
+    entries = await readdir(absoluteDir, { withFileTypes: true });
+  } catch {
+    return Response.json({ ok: true, assets: [] });
+  }
+
+  const assets = await Promise.all(
+    entries
+      .filter((entry) => entry.isFile())
+      .filter((entry) => !shouldFilterVideos || videoExtensions.has(path.extname(entry.name).toLowerCase()))
+      .map(async (entry) => {
+        const absolutePath = path.join(absoluteDir, entry.name);
+        const details = await stat(absolutePath);
+        const assetPath = `${artworkId}/${entry.name}`;
+        return {
+          name: entry.name,
+          url: `/api/workbench/assets/${assetPath}`,
+          bytes: details.size,
+          updatedAt: details.mtime.toISOString(),
+        };
+      }),
+  );
+
+  assets.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  return Response.json({ ok: true, assets });
+}
 
 export async function POST(request: Request) {
   const formData = await request.formData();
@@ -55,7 +92,7 @@ export async function POST(request: Request) {
 
   return Response.json({
     ok: true,
-    url: `/${relativeDir.replaceAll(path.sep, "/")}/${fileName}`,
+    url: `/api/workbench/assets/${artworkId}/${fileName}`,
     bytes: bytes.length,
     type: file.type || "application/octet-stream",
   });

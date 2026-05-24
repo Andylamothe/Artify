@@ -14,6 +14,9 @@ export function useArtworkAudio({ started, activeArtwork, shouldPlay }: UseArtwo
   const [muted, setMuted] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [requiresManualPlay, setRequiresManualPlay] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const currentAudioUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -22,11 +25,27 @@ export function useArtworkAudio({ started, activeArtwork, shouldPlay }: UseArtwo
       audioRef.current = new Audio();
       audioRef.current.preload = "auto";
     }
+    const audio = audioRef.current;
+    const updateTime = () => setCurrentTime(audio.currentTime || 0);
+    const updateDuration = () => setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    const markPlaying = () => setIsPlaying(true);
+    const markPaused = () => setIsPlaying(false);
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("loadedmetadata", updateDuration);
+    audio.addEventListener("durationchange", updateDuration);
+    audio.addEventListener("play", markPlaying);
+    audio.addEventListener("pause", markPaused);
+    audio.addEventListener("ended", markPaused);
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-      }
+      audio.removeEventListener("timeupdate", updateTime);
+      audio.removeEventListener("loadedmetadata", updateDuration);
+      audio.removeEventListener("durationchange", updateDuration);
+      audio.removeEventListener("play", markPlaying);
+      audio.removeEventListener("pause", markPaused);
+      audio.removeEventListener("ended", markPaused);
+      audio.pause();
+      audio.src = "";
+      setIsPlaying(false);
     };
   }, [started]);
 
@@ -34,8 +53,10 @@ export function useArtworkAudio({ started, activeArtwork, shouldPlay }: UseArtwo
     const audio = audioRef.current;
     if (!audio || !started) return;
 
-    if (!activeArtwork) {
+    if (!activeArtwork || !activeArtwork.audioEnabled || !activeArtwork.audioUrl) {
       audio.pause();
+      audio.removeAttribute("src");
+      currentAudioUrlRef.current = null;
       return;
     }
 
@@ -67,15 +88,40 @@ export function useArtworkAudio({ started, activeArtwork, shouldPlay }: UseArtwo
     audioRef.current?.pause();
   };
 
-  const tryPlayManually = async () => {
+  const play = async () => {
     if (!audioRef.current) return;
     try {
       await audioRef.current.play();
       setRequiresManualPlay(false);
       setAudioError(null);
     } catch {
-      setAudioError("Audio unavailable on this device.");
+      setRequiresManualPlay(true);
+      setAudioError("Audio playback blocked. Tap Play audio.");
     }
+  };
+
+  const togglePlayback = () => {
+    if (audioRef.current?.paused) void play();
+    else pause();
+  };
+
+  const seekBy = (seconds: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const safeDuration = Number.isFinite(audio.duration) ? audio.duration : 0;
+    audio.currentTime = Math.max(0, Math.min(safeDuration || Number.MAX_SAFE_INTEGER, audio.currentTime + seconds));
+    setCurrentTime(audio.currentTime);
+  };
+
+  const seekToRatio = (ratio: number) => {
+    const audio = audioRef.current;
+    if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+    audio.currentTime = Math.max(0, Math.min(audio.duration, audio.duration * ratio));
+    setCurrentTime(audio.currentTime);
+  };
+
+  const tryPlayManually = async () => {
+    await play();
   };
 
   const toggleMuted = () => {
@@ -88,6 +134,12 @@ export function useArtworkAudio({ started, activeArtwork, shouldPlay }: UseArtwo
     audioError,
     requiresManualPlay,
     tryPlayManually,
+    isPlaying,
+    currentTime,
+    duration,
+    togglePlayback,
+    seekBy,
+    seekToRatio,
     pause,
   };
 }
