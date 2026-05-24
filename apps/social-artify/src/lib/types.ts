@@ -30,6 +30,7 @@ export interface Artwork {
   categories: string[];
   galleryLocation?: GalleryLocation;
   imageUrl: string;
+  isHidden?: boolean;
   has3D: boolean;
   arWebId?: string;
   description?: string;

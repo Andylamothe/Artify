@@ -9,18 +9,24 @@
     "dimensions": "77 × 53 cm",
     "museum": "Louvre Museum",
     "location": "Paris",
-    "categories": ["Renaissance", "Portraits"],
+    "categories": [
+      "Renaissance",
+      "Portraits"
+    ],
     "galleryLocation": {
       "floor": 2,
       "section": "Wing A",
       "piece": "B"
     },
     "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/800px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg",
+    "isHidden": false,
     "has3D": true,
     "arWebId": "mona-lisa",
     "description": "The world's most recognised painting. Leonardo's sfumato technique gives the face an unrivalled softness.",
     "likes": 0,
+    "dislikes": 0,
     "likedBy": [],
+    "dislikedBy": [],
     "savedBy": [],
     "createdAt": "2024-01-01T00:00:00.000Z"
   },
@@ -34,7 +40,9 @@
     "dimensions": "73.7 × 92.1 cm",
     "museum": "Museum of Modern Art",
     "location": "New York",
-    "categories": ["Post-Impressionism"],
+    "categories": [
+      "Post-Impressionism"
+    ],
     "galleryLocation": {
       "floor": 3,
       "section": "Wing D",
@@ -47,7 +55,10 @@
     "likes": 0,
     "likedBy": [],
     "savedBy": [],
-    "createdAt": "2024-01-01T00:00:00.000Z"
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "dislikes": 0,
+    "dislikedBy": [],
+    "isHidden": false
   },
   {
     "id": "the-scream",
@@ -59,7 +70,9 @@
     "dimensions": "91 × 73.5 cm",
     "museum": "National Museum",
     "location": "Oslo",
-    "categories": ["Expressionism"],
+    "categories": [
+      "Expressionism"
+    ],
     "galleryLocation": {
       "floor": 3,
       "section": "Wing C",
@@ -72,7 +85,10 @@
     "likes": 0,
     "likedBy": [],
     "savedBy": [],
-    "createdAt": "2024-01-01T00:00:00.000Z"
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "dislikes": 0,
+    "dislikedBy": [],
+    "isHidden": false
   },
   {
     "id": "girl-with-pearl-earring",
@@ -84,7 +100,10 @@
     "dimensions": "44.5 × 39 cm",
     "museum": "Mauritshuis",
     "location": "The Hague",
-    "categories": ["Baroque", "Portraits"],
+    "categories": [
+      "Baroque",
+      "Portraits"
+    ],
     "galleryLocation": {
       "floor": 1,
       "section": "Wing B",
@@ -96,7 +115,10 @@
     "likes": 0,
     "likedBy": [],
     "savedBy": [],
-    "createdAt": "2024-01-01T00:00:00.000Z"
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "dislikes": 0,
+    "dislikedBy": [],
+    "isHidden": false
   },
   {
     "id": "judith-beheading-holofernes",
@@ -108,7 +130,9 @@
     "dimensions": "145 × 195 cm",
     "museum": "Galleria Nazionale d'Arte Antica",
     "location": "Rome",
-    "categories": ["Italian Baroque"],
+    "categories": [
+      "Italian Baroque"
+    ],
     "galleryLocation": {
       "floor": 2,
       "section": "Wing E",
@@ -120,6 +144,9 @@
     "likes": 0,
     "likedBy": [],
     "savedBy": [],
-    "createdAt": "2024-01-01T00:00:00.000Z"
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "dislikes": 0,
+    "dislikedBy": [],
+    "isHidden": false
   }
 ]

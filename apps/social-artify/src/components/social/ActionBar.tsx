@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import type { Artwork } from "@/lib/types";
 import { useAuthStore } from "@/store/authStore";
 import { useFeedStore } from "@/store/feedStore";
-import { buildArExperienceUrl } from "@/lib/ar";
 
 interface ActionBarProps {
   artwork: Artwork | null;
@@ -22,17 +21,12 @@ export default function ActionBar({ artwork, onPass, onLike }: ActionBarProps) {
   const actorId = user?.id ?? (isGuest ? guestSessionId : null);
   const isLiked = actorId ? (storedArtwork?.likedBy ?? []).includes(actorId) : false;
 
-  const handle3D = () => {
-    if (!artwork?.has3D || !artwork.arWebId) return;
-    window.open(buildArExperienceUrl(artwork.arWebId), "_blank");
-  };
-
   const handleLike = () => {
     onLike?.();
   };
 
   return (
-    <div className="flex items-center justify-center gap-6 py-3 shrink-0">
+    <div className="flex items-center justify-center gap-8 py-3 shrink-0">
       {/* Pass */}
       <motion.button
         whileTap={{ scale: 0.88 }}
@@ -47,26 +41,6 @@ export default function ActionBar({ artwork, onPass, onLike }: ActionBarProps) {
         >
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </motion.button>
-
-      {/* View in 3D */}
-      <motion.button
-        whileTap={{ scale: 0.88 }}
-        onClick={handle3D}
-        disabled={!artwork?.has3D}
-        className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-md disabled:opacity-35"
-        aria-label="View in 3D"
-        title={artwork?.has3D ? "View in 3D" : "No 3D for this artwork"}
-      >
-        <svg
-          width="28" height="28" viewBox="0 0 24 24"
-          fill="none" stroke="white" strokeWidth="2"
-          strokeLinecap="round" strokeLinejoin="round"
-        >
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-          <line x1="12" y1="22.08" x2="12" y2="12" />
         </svg>
       </motion.button>
 

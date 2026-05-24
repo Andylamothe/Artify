@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const category = req.nextUrl.searchParams.get("category");
   const profile = req.nextUrl.searchParams.get("profile");
 
-  let artworks = db.artworks.getAll();
+  let artworks = db.artworks.getAll().filter((artwork) => !artwork.isHidden);
   if (category && category !== "All")
     artworks = artworks.filter((a) =>
       category === "New 3D"

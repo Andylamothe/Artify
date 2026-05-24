@@ -30,9 +30,20 @@ interface DraggableCardProps {
 
 function DraggableCard({ artwork, onLike, onPass, onCardTap }: DraggableCardProps) {
   const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-18, 18]);
-  const likeOpacity = useTransform(x, [20, 120], [0, 1]);
-  const passOpacity = useTransform(x, [-120, -20], [1, 0]);
+  const rotate = useTransform(x, [-220, 220], [-14, 14]);
+  const likeOpacity = useTransform(x, [28, 128], [0, 1]);
+  const passOpacity = useTransform(x, [-128, -28], [1, 0]);
+  const likeBorderOpacity = useTransform(x, [24, 104], [0, 1]);
+  const passBorderOpacity = useTransform(x, [-104, -24], [1, 0]);
+  const cardShadow = useTransform(
+    x,
+    [-180, 0, 180],
+    [
+      "0 22px 48px rgba(225,29,72,0.18)",
+      "0 18px 42px rgba(55,29,16,0.18)",
+      "0 22px 48px rgba(16,185,129,0.18)",
+    ],
+  );
   const isDragging = useRef(false);
 
   const handleDragStart = () => { isDragging.current = true; };
@@ -42,11 +53,11 @@ function DraggableCard({ artwork, onLike, onPass, onCardTap }: DraggableCardProp
       Math.abs(info.offset.x) > 80 || Math.abs(info.velocity.x) > 400;
     if (hit) {
       const dir = info.offset.x > 0 ? 1 : -1;
-      await animate(x, dir * 720, { duration: 0.26, ease: "easeOut" });
+      await animate(x, dir * 760, { duration: 0.22, ease: [0.22, 1, 0.36, 1] });
       if (dir > 0) onLike();
       else onPass();
     } else {
-      animate(x, 0, { type: "spring", damping: 22, stiffness: 320 });
+      animate(x, 0, { type: "spring", damping: 30, stiffness: 420, mass: 0.8 });
     }
     setTimeout(() => { isDragging.current = false; }, 50);
   };
@@ -55,8 +66,19 @@ function DraggableCard({ artwork, onLike, onPass, onCardTap }: DraggableCardProp
     <motion.div
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.7}
-      style={{ x, rotate, width: "100%", height: "100%" }}
+      dragElastic={0.42}
+      dragMomentum={false}
+      whileDrag={{ scale: 1.012 }}
+      style={{
+        x,
+        rotate,
+        width: "100%",
+        height: "100%",
+        boxShadow: cardShadow,
+        willChange: "transform",
+        transform: "translateZ(0)",
+        backfaceVisibility: "hidden",
+      }}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onTap={() => { if (!isDragging.current) onCardTap(); }}
@@ -64,11 +86,33 @@ function DraggableCard({ artwork, onLike, onPass, onCardTap }: DraggableCardProp
     >
       <div className="relative w-full h-full">
         <motion.div
+          aria-hidden="true"
+          style={{ opacity: likeBorderOpacity, willChange: "opacity" }}
+          className="absolute inset-0 z-20 pointer-events-none rounded-[var(--radius-card,12px)] border-[7px] border-emerald-400 shadow-[0_0_0_2px_rgba(236,253,245,0.85),0_0_26px_rgba(52,211,153,0.72),inset_0_0_26px_rgba(16,185,129,0.24)]"
+        >
+          <div className="absolute inset-0 rounded-[calc(var(--radius-card,12px)-4px)] bg-emerald-400/10" />
+          <div className="absolute right-5 top-5 flex items-center gap-2 rounded-full bg-emerald-400 px-4 py-2 text-sm font-black uppercase tracking-wide text-[#082218] shadow-[0_12px_32px_rgba(16,185,129,0.45)]">
+            <span className="material-icons" style={{ fontSize: "19px", lineHeight: 1 }}>favorite</span>
+            Like
+          </div>
+        </motion.div>
+        <motion.div
+          aria-hidden="true"
+          style={{ opacity: passBorderOpacity, willChange: "opacity" }}
+          className="absolute inset-0 z-20 pointer-events-none rounded-[var(--radius-card,12px)] border-[7px] border-rose-500 shadow-[0_0_0_2px_rgba(255,241,242,0.82),0_0_26px_rgba(244,63,94,0.72),inset_0_0_26px_rgba(225,29,72,0.24)]"
+        >
+          <div className="absolute inset-0 rounded-[calc(var(--radius-card,12px)-4px)] bg-rose-500/10" />
+          <div className="absolute left-5 top-5 flex items-center gap-2 rounded-full bg-rose-500 px-4 py-2 text-sm font-black uppercase tracking-wide text-white shadow-[0_12px_32px_rgba(225,29,72,0.45)]">
+            <span className="material-icons" style={{ fontSize: "19px", lineHeight: 1 }}>close</span>
+            Pass
+          </div>
+        </motion.div>
+        <motion.div
           style={{ opacity: likeOpacity }}
-          className="absolute inset-0 z-10 flex items-start justify-end p-5 pointer-events-none"
+          className="absolute inset-0 z-30 flex items-start justify-end p-5 pointer-events-none"
         >
           <span
-            className="text-base font-bold text-green-400 border-2 border-green-400 px-3 py-1 rounded-md"
+            className="text-base font-bold text-emerald-100 border-2 border-emerald-200 bg-emerald-500/35 px-3 py-1 rounded-md"
             style={{ transform: "rotate(-14deg)", textShadow: "0 1px 4px rgba(0,0,0,.5)" }}
           >
             <span className="flex items-center gap-1">
@@ -79,10 +123,10 @@ function DraggableCard({ artwork, onLike, onPass, onCardTap }: DraggableCardProp
         </motion.div>
         <motion.div
           style={{ opacity: passOpacity }}
-          className="absolute inset-0 z-10 flex items-start justify-start p-5 pointer-events-none"
+          className="absolute inset-0 z-30 flex items-start justify-start p-5 pointer-events-none"
         >
           <span
-            className="text-base font-bold text-red-400 border-2 border-red-400 px-3 py-1 rounded-md"
+            className="text-base font-bold text-rose-100 border-2 border-rose-200 bg-rose-500/35 px-3 py-1 rounded-md"
             style={{ transform: "rotate(14deg)", textShadow: "0 1px 4px rgba(0,0,0,.5)" }}
           >
             PASS ✕
@@ -161,13 +205,14 @@ const SwipeDeck = forwardRef<SwipeDeckHandle, SwipeDeckProps>(
             <div
               key={artwork.id}
               className="absolute inset-0"
-              style={{
-                zIndex: visible.length - stackIdx,
-                transform: `scale(${scale}) translateY(${ty}px)`,
-                transformOrigin: "bottom center",
-                transition: "transform 0.25s ease",
-                pointerEvents: isTop ? "auto" : "none",
-              }}
+          style={{
+            zIndex: visible.length - stackIdx,
+            transform: `scale(${scale}) translateY(${ty}px)`,
+            transformOrigin: "bottom center",
+            transition: "transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)",
+            pointerEvents: isTop ? "auto" : "none",
+            willChange: "transform",
+          }}
             >
               {isTop ? (
                 <DraggableCard

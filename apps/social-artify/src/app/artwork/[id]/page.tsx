@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useAuth } from "@/hooks/useAuth";
 import { useLike } from "@/hooks/useLike";
-import { buildArExperienceUrl } from "@/lib/ar";
+import { buildArModeUrl } from "@/lib/ar";
 import { APP_BASE } from "@/lib/api";
 import BottomNav from "@/components/layout/BottomNav";
 import LikeButton from "@/components/social/LikeButton";
@@ -52,11 +52,6 @@ export default function ArtworkDetailPage() {
     });
     const data = await res.json();
     setIsSaved(data.saved);
-  };
-
-  const handle3D = () => {
-    if (!artwork?.has3D || !artwork.arWebId) return;
-    window.open(buildArExperienceUrl(artwork.arWebId), "_blank");
   };
 
   if (!artwork) {
@@ -180,19 +175,12 @@ export default function ArtworkDetailPage() {
             {artwork.museum && <span> · {artwork.museum}{artwork.location ? `, ${artwork.location}` : ""}</span>}
           </p>
 
-          {artwork.has3D && artwork.arWebId && (
-            <button
-              onClick={handle3D}
-              className="flex items-center justify-center gap-2 w-full py-3.5 bg-text text-surface rounded-full font-semibold text-sm mb-5 active:scale-95 transition-transform"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                <line x1="12" y1="22.08" x2="12" y2="12" />
-              </svg>
-              View in 3D
-            </button>
-          )}
+          <a
+            href={buildArModeUrl()}
+            className="mb-5 flex w-full items-center justify-center gap-2 rounded-full bg-text py-3.5 text-sm font-semibold text-surface active:scale-95 transition-transform"
+          >
+            Go to AR mode
+          </a>
 
           <div className="h-px bg-border mb-4" />
 

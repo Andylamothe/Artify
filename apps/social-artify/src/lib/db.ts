@@ -34,6 +34,7 @@ function normalizeArtwork(artwork: Artwork): Artwork {
     likedBy: artwork.likedBy ?? [],
     dislikedBy: artwork.dislikedBy ?? [],
     savedBy: artwork.savedBy ?? [],
+    isHidden: artwork.isHidden ?? false,
   };
 }
 

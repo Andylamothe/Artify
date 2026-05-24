@@ -21,7 +21,7 @@ export async function GET(
   const payload = await verifyToken(req);
 
   const artwork = db.artworks.getAll().find((a) => a.id === id);
-  if (!artwork)
+  if (!artwork || artwork.isHidden)
     return NextResponse.json({ error: "Artwork not found" }, { status: 404 });
 
   return NextResponse.json({ artwork: toClient(artwork, payload?.userId) });
