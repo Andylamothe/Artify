@@ -1,0 +1,68 @@
+.root {
+  --ink: #fff7ec;
+  --muted: rgba(255, 247, 236, 0.72);
+  --charcoal: #11100e;
+  --gold: #f0c45e;
+  --spot-x: 50vw;
+  --spot-y: 50vh;
+  position: relative;
+  min-height: 100svh;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(240, 196, 94, 0.18), transparent 30rem),
+    linear-gradient(135deg, #0d0c0b 0%, #20150f 44%, #110f0d 100%);
+  color: var(--ink);
+}
+
+.root :global(*) { box-sizing: border-box; }
+.locked :global(body) { overflow: hidden; }
+
+.introScene { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #0c0b0a; }
+.introArt, .introVignette { position: absolute; inset: -8%; }
+.introArt { background: url("/landing/artify-landing-hero.png") 62% center/cover; transform: scale(1.54); }
+.introVignette { background: radial-gradient(circle at 58% 45%, transparent 0 16%, rgba(8, 7, 6, 0.22) 38%, rgba(8, 7, 6, 0.9) 82%); }
+.introCopy { position: relative; z-index: 2; display: grid; gap: .55rem; justify-items: center; text-align: center; }
+.introCopyTag { color: var(--gold); font-size: .8rem; font-weight: 850; text-transform: uppercase; letter-spacing: .12em; }
+.introCopyTitle { font-family: Georgia, serif; max-width: min(820px, calc(100vw - 2rem)); font-size: clamp(3rem, 7vw, 7rem); line-height: .9; margin: 0; }
+
+.enterButton { display: inline-flex; min-height: 3.3rem; align-items: center; gap: .65rem; margin-top: 1.5rem; border: 1px solid rgba(255, 247, 236, 0.34); border-radius: 999px; background: rgba(255, 247, 236, 0.1); color: var(--ink); padding: 0 1.25rem; font-size: .9rem; font-weight: 850; cursor: pointer; }
+.enterIcon { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+.topbar { position: fixed; inset: 0 0 auto; z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: clamp(1rem, 3vw, 2rem); opacity: 0; }
+.brand { font-family: Georgia, serif; font-size: clamp(1.5rem, 2vw, 2.1rem); font-weight: 800; color: var(--ink); text-decoration: none; }
+.brandDot { color: var(--gold); }
+.nav { display: flex; gap: .5rem; padding: .35rem; border: 1px solid rgba(255, 247, 236, 0.18); border-radius: 999px; background: rgba(17, 16, 14, .38); }
+.navLink { min-height: 2.35rem; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 .85rem; color: var(--muted); font-size: .82rem; font-weight: 750; text-decoration: none; }
+
+.hero { min-height: 100svh; display: grid; grid-template-columns: minmax(0,1fr) minmax(300px,.8fr) minmax(0,1fr); position: relative; }
+.path { position: relative; display: grid; align-items: end; min-height: 100svh; overflow: hidden; padding: clamp(1rem, 3vw, 2rem); text-decoration: none; color: var(--ink); }
+.pathMedia, .pathOverlay { position: absolute; inset: 0; }
+.pathSocial .pathMedia { background: url("/landing/artify-social-hero.png") center/cover; }
+.pathAr .pathMedia { background: url("/landing/artify-landing-hero.png") center/cover; }
+.pathOverlay { background: linear-gradient(0deg, rgba(13,12,11,.92) 0%, rgba(13,12,11,.3) 48%, rgba(13,12,11,.66) 100%); }
+.pathCopy { position: relative; z-index: 2; max-width: 25rem; display: grid; gap: .62rem; }
+.pathTitle { font-family: Georgia, serif; font-size: clamp(2.2rem, 4.5vw, 4.7rem); line-height: .92; margin: 0; }
+.pathDesc { max-width: 19rem; color: var(--muted); font-size: .95rem; line-height: 1.5; margin: 0; }
+
+.center { position: relative; z-index: 6; min-height: 100svh; display: grid; align-content: center; justify-items: center; padding: 6rem 1rem 3rem; text-align: center; }
+.title { margin: 0; font-family: Georgia, serif; font-size: clamp(3.2rem, 7.4vw, 7.7rem); line-height: .86; }
+.line { display: block; }
+.intro { max-width: 28rem; margin: 1.15rem 0 0; color: rgba(255, 247, 236, .74); font-size: clamp(.95rem, 1.5vw, 1.08rem); line-height: 1.55; }
+
+.mobileOnly { display: none; }
+.desktopOnly { display: inline; }
+
+@media (max-width: 900px) {
+  .nav { display: none; }
+  .hero { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto auto; padding: 4.8rem 0 .85rem; }
+  .center { min-height: 0; padding: .5rem 1.25rem 1rem; }
+  .path { min-height: clamp(136px,19svh,170px); margin: 0 1rem .62rem; border: 1px solid rgba(255,247,236,.18); border-radius: 22px; padding: 1rem; }
+  .pathMedia, .pathOverlay { border-radius: 22px; }
+  .title { font-size: clamp(2.25rem, 12vw, 3.55rem); }
+  .intro { max-width: 19rem; margin-top: .72rem; font-size: .84rem; }
+  .pathTitle { font-size: clamp(1.95rem, 9vw, 2.75rem); }
+  .pathDesc { max-width: 16rem; font-size: .82rem; line-height: 1.35; }
+  .mobileOnly { display: inline; }
+  .desktopOnly { display: none; }
+}

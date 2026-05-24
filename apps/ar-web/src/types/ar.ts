@@ -77,6 +77,8 @@ export interface ARObjectConfig {
   brushWidth?: number;
   motionBrush?: MotionBrushState;
   portfolioItems?: ARPortfolioItem[];
+  mediaAspectRatio?: number;
+  mediaFit?: "contain" | "cover";
   color: string;
   opacity: number;
   width: number;

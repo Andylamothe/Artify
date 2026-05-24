@@ -2254,8 +2254,8 @@ function ObjectInspector({
         </button>
       </div>
       <NumberControl label="Opacity" value={object.opacity} min={0.05} max={1} step={0.05} onChange={(value) => onChange({ ...object, opacity: value })} />
-      <NumberControl label="Width" value={object.width} min={0.05} max={3} step={0.05} onChange={(value) => onChange({ ...object, width: value })} />
-      <NumberControl label="Height" value={object.height} min={0.05} max={3} step={0.05} onChange={(value) => onChange({ ...object, height: value })} />
+      <NumberControl label="Width" value={object.width} min={0.05} max={3} step={0.05} onChange={(value) => onChange(resizeObjectWithAspectLock(object, "width", value))} />
+      <NumberControl label="Height" value={object.height} min={0.05} max={3} step={0.05} onChange={(value) => onChange(resizeObjectWithAspectLock(object, "height", value))} />
       <div className="field-row-title">Position</div>
       <NumberControl label="X" value={object.position.x} min={-1.5} max={1.5} step={0.05} onChange={(value) => updatePosition("x", value)} />
       <NumberControl label="Y" value={object.position.y} min={-1.5} max={1.5} step={0.05} onChange={(value) => updatePosition("y", value)} />
@@ -2652,6 +2652,8 @@ function createARObject(type: ARObjectType, index: number): ARObjectConfig {
     brushSpeed: 1,
     brushWidth: 0.045,
     portfolioItems: [],
+    mediaAspectRatio: undefined,
+    mediaFit: "cover",
     color: type === "text" ? "#fff7d6" : type === "button" ? "#2f6f61" : "#55c7a9",
     opacity: 1,
     width: type === "text" ? 1.1 : type === "button" ? 0.72 : type === "panel" ? 0.96 : type === "portfolio" ? 1 : 0.62,
@@ -2676,6 +2678,8 @@ function createBrushObject(index: number, points: WorldPoint[]): ARObjectConfig 
     brushAnimation: "flow",
     brushSpeed: 1,
     brushWidth: 0.045,
+    mediaAspectRatio: undefined,
+    mediaFit: "cover",
     color: "#5A83E5",
     opacity: 0.92,
     width: 0.2,
@@ -2726,8 +2730,28 @@ function applyMediaAspectRatio(object: ARObjectConfig, aspect: number): ARObject
   const nextHeight = clampFloat(base / aspect, 0.08, 3);
   return {
     ...object,
+    mediaAspectRatio: aspect,
+    mediaFit: "cover",
     width: clampFloat(base, 0.08, 3),
     height: nextHeight,
+  };
+}
+
+function resizeObjectWithAspectLock(object: ARObjectConfig, axis: "width" | "height", value: number): ARObjectConfig {
+  const nextValue = clampFloat(value, 0.05, 3);
+  const aspect = object.type === "video" && Number.isFinite(object.mediaAspectRatio) ? object.mediaAspectRatio ?? 0 : 0;
+  if (aspect <= 0) return { ...object, [axis]: nextValue };
+  if (axis === "width") {
+    return {
+      ...object,
+      width: nextValue,
+      height: clampFloat(nextValue / aspect, 0.05, 3),
+    };
+  }
+  return {
+    ...object,
+    height: nextValue,
+    width: clampFloat(nextValue * aspect, 0.05, 3),
   };
 }
 
@@ -2787,16 +2811,40 @@ function transformObjectFromPointer(
 
   const horizontal = normalizeBounds(left, right, 0.08);
   const vertical = normalizeBounds(bottom, top, 0.08);
+  const locked = resizeBoundsWithAspectLock(object, horizontal, vertical, drag.handle);
 
   return {
     ...object,
-    width: clampFloat(horizontal.size, 0.08, 3),
-    height: clampFloat(vertical.size, 0.08, 3),
+    width: clampFloat(locked.horizontal.size, 0.08, 3),
+    height: clampFloat(locked.vertical.size, 0.08, 3),
     position: {
       ...object.position,
-      x: clampFloat(horizontal.center, -2, 2),
-      y: clampFloat(vertical.center, -2, 2),
+      x: clampFloat(locked.horizontal.center, -2, 2),
+      y: clampFloat(locked.vertical.center, -2, 2),
     },
+  };
+}
+
+function resizeBoundsWithAspectLock(
+  object: ARObjectConfig,
+  horizontal: { center: number; size: number },
+  vertical: { center: number; size: number },
+  handle: ResizeHandle,
+) {
+  const aspect = object.type === "video" && Number.isFinite(object.mediaAspectRatio) ? object.mediaAspectRatio ?? 0 : 0;
+  if (aspect <= 0) return { horizontal, vertical };
+
+  const useVerticalSize = handle === "n" || handle === "s";
+  if (useVerticalSize) {
+    return {
+      horizontal: { ...horizontal, size: clampFloat(vertical.size * aspect, 0.08, 3) },
+      vertical,
+    };
+  }
+
+  return {
+    horizontal,
+    vertical: { ...vertical, size: clampFloat(horizontal.size / aspect, 0.08, 3) },
   };
 }
 

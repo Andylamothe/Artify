@@ -131,6 +131,8 @@ function normalizeArtwork(artwork: ArtworkConfig, index: number): ArtworkConfig 
                   src: item.src,
                 }))
             : [],
+          mediaAspectRatio: clampFloat(object.mediaAspectRatio, 0.05, 20, 0),
+          mediaFit: object.mediaFit === "contain" ? "contain" : "cover",
           color: object.color || "#ffffff",
           opacity: clampFloat(object.opacity, 0.05, 1, 1),
           width: clampFloat(object.width, 0.05, 3, 0.5),

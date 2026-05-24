@@ -3234,6 +3234,60 @@ a {
   font-size: 0.72rem;
 }
 
+.portfolio-object-editor {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(174, 205, 191, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.portfolio-object-editor > input[type="file"] {
+  display: none;
+}
+
+.portfolio-selection-list {
+  display: grid;
+  gap: 0.55rem;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.portfolio-selection-list p {
+  margin: 0;
+  color: rgba(238, 247, 244, 0.64);
+  font-size: 0.84rem;
+}
+
+.portfolio-select-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.portfolio-select-row button {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.35rem;
+  color: rgba(238, 247, 244, 0.74);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(174, 205, 191, 0.12);
+}
+
+.portfolio-select-row.is-selected button {
+  color: #081214;
+  background: #78e0c1;
+}
+
+.portfolio-select-row img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
 .inspector-rail {
   display: grid;
   align-content: start;
@@ -4242,5 +4296,557 @@ a {
 
   .artify-gateway-actions {
     display: grid;
+  }
+}
+.artify-landing {
+  min-height: 100svh;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0d0c0b 0%, #20150f 44%, #110f0d 100%);
+  color: #fff7ec;
+}
+
+.artify-landing-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.45s ease;
+}
+
+.artify-landing.is-entered .artify-landing-intro {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.artify-landing-intro-media,
+.artify-landing-intro-overlay { position: absolute; inset: 0; }
+.artify-landing-intro-media { background: url("/ar/images/artify-landing-hero.png") center / cover; }
+.artify-landing-intro-overlay { background: radial-gradient(circle at 58% 45%, transparent 0 16%, rgba(8, 7, 6, 0.22) 38%, rgba(8, 7, 6, 0.9) 82%); }
+.artify-landing-intro-copy { z-index: 2; display: grid; gap: 0.6rem; text-align: center; }
+.artify-landing-intro-copy span { color: #f0c45e; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; font-size: .8rem; }
+.artify-landing-intro-copy strong { font-size: clamp(2.4rem, 7vw, 5.5rem); line-height: .9; }
+.artify-landing-enter { border: 1px solid rgba(255,247,236,.34); border-radius: 999px; background: rgba(255,247,236,.1); color: #fff7ec; padding: .8rem 1.3rem; font-weight: 700; }
+
+.artify-landing-hero { min-height: 100svh; display: grid; grid-template-columns: 1fr .8fr 1fr; opacity: 0; transform: scale(1.02); transition: opacity .5s ease, transform .6s ease; }
+.artify-landing.is-entered .artify-landing-hero { opacity: 1; transform: scale(1); }
+.artify-landing-path { position: relative; display: grid; align-items: end; padding: 1.5rem; color: #fff7ec; text-decoration: none; }
+.artify-landing-path-media, .artify-landing-path-overlay { position: absolute; inset: 0; }
+.artify-landing-social .artify-landing-path-media { background: url("/ar/images/artify-social-hero.png") center / cover; }
+.artify-landing-ar .artify-landing-path-media { background: url("/ar/images/artify-landing-hero.png") center / cover; }
+.artify-landing-path-overlay { background: linear-gradient(0deg, rgba(13, 12, 11, 0.92) 0%, rgba(13, 12, 11, 0.3) 48%, rgba(13, 12, 11, 0.66) 100%); }
+.artify-landing-path-copy { position: relative; z-index: 2; display: grid; gap: .5rem; max-width: 22rem; }
+.artify-landing-path-copy strong { font-size: clamp(2rem, 4vw, 4rem); line-height: .9; }
+.artify-landing-path-copy span { color: rgba(255,247,236,.74); }
+.artify-landing-center { display: grid; align-content: center; text-align: center; padding: 1rem; }
+.artify-landing-center h1 { font-size: clamp(2rem, 5.5vw, 5rem); line-height: .9; margin: 0; }
+.artify-landing-center p { color: rgba(255,247,236,.74); max-width: 28rem; margin: .9rem auto 0; }
+
+@media (max-width: 900px) {
+  .artify-landing-hero { grid-template-columns: 1fr; grid-template-rows: auto auto auto; padding-top: 4.5rem; }
+  .artify-landing-center { order: -1; padding: 0 1rem 1rem; }
+  .artify-landing-path { min-height: 150px; margin: 0 1rem .7rem; border-radius: 22px; overflow: hidden; border: 1px solid rgba(255,247,236,.18); }
+  .artify-landing-center h1 { font-size: clamp(2rem, 10vw, 3.2rem); }
+}
+
+body.landing-active {
+  overflow: hidden;
+  background: #11100e;
+  color: #fff7ec;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.landing {
+  --ink: #fff7ec;
+  --muted: rgba(255, 247, 236, 0.72);
+  --faint: rgba(255, 247, 236, 0.16);
+  --paper: #f1e2d1;
+  --charcoal: #11100e;
+  --burgundy: #810b38;
+  --gold: #f0c45e;
+  --teal: #1b6a66;
+  --spot-x: 50vw;
+  --spot-y: 50vh;
+  position: relative;
+  min-height: 100svh;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(240, 196, 94, 0.18), transparent 30rem),
+    linear-gradient(135deg, #0d0c0b 0%, #20150f 44%, #110f0d 100%);
+}
+
+.intro-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #0c0b0a;
+  pointer-events: auto;
+}
+
+.intro-art,
+.intro-vignette {
+  position: absolute;
+  inset: -8%;
+}
+
+.intro-art {
+  background: url("/assets/artify-landing-hero.png") 62% center / cover;
+  transform: scale(1.54);
+  filter: saturate(1.05);
+}
+
+.intro-vignette {
+  background:
+    radial-gradient(circle at 58% 45%, transparent 0 16%, rgba(8, 7, 6, 0.22) 38%, rgba(8, 7, 6, 0.9) 82%),
+    linear-gradient(90deg, rgba(8, 7, 6, 0.86), rgba(8, 7, 6, 0.04), rgba(8, 7, 6, 0.66));
+}
+
+.intro-copy {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 0.55rem;
+  justify-items: center;
+  text-align: center;
+  color: var(--ink);
+}
+
+.intro-copy span {
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.intro-copy strong {
+  font-family: "Playfair Display", Georgia, serif;
+  max-width: min(820px, calc(100vw - 2rem));
+  font-size: clamp(3rem, 7vw, 7rem);
+  line-height: 0.9;
+}
+
+.enter-button {
+  display: inline-flex;
+  min-height: 3.3rem;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 1.5rem;
+  border: 1px solid rgba(255, 247, 236, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 247, 236, 0.1);
+  color: var(--ink);
+  padding: 0 1.25rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 850;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+}
+
+.enter-button svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 220ms ease;
+}
+
+.enter-button:hover svg,
+.enter-button:focus-visible svg {
+  transform: translateX(3px);
+}
+
+.enter-button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+
+.ambient {
+  position: absolute;
+  inset-block: -15%;
+  width: 42vw;
+  z-index: -3;
+  filter: blur(0.5px);
+  opacity: 0.86;
+}
+
+.ambient-left {
+  left: 0;
+  background:
+    linear-gradient(90deg, rgba(7, 8, 8, 0.3), rgba(7, 8, 8, 0.72)),
+    url("/assets/artify-social-hero.png") center / cover;
+}
+
+.ambient-right {
+  right: 0;
+  background:
+    linear-gradient(270deg, rgba(7, 8, 8, 0.22), rgba(7, 8, 8, 0.76)),
+    url("/assets/artify-landing-hero.png") center / cover;
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.34;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(circle at center, black, transparent 78%);
+}
+
+.topbar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.brand {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(1.5rem, 2vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.brand span {
+  color: var(--gold);
+}
+
+.nav {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  border: 1px solid rgba(255, 247, 236, 0.18);
+  border-radius: 999px;
+  background: rgba(17, 16, 14, 0.38);
+  backdrop-filter: blur(18px);
+}
+
+.nav a {
+  min-height: 2.35rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.nav a:hover {
+  background: rgba(255, 247, 236, 0.1);
+  color: var(--ink);
+}
+
+.hero {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr) minmax(0, 1fr);
+  align-items: stretch;
+  position: relative;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.path {
+  position: relative;
+  display: grid;
+  align-items: end;
+  min-height: 100svh;
+  overflow: hidden;
+  padding: clamp(1rem, 3vw, 2rem);
+  outline: 0;
+}
+
+.path-media,
+.path-overlay {
+  position: absolute;
+  inset: 0;
+  transition: transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 600ms ease;
+}
+
+.path-social .path-media {
+  background: url("/assets/artify-social-hero.png") center / cover;
+}
+
+.path-ar .path-media {
+  background: url("/assets/artify-landing-hero.png") center / cover;
+}
+
+.path-overlay {
+  background:
+    linear-gradient(0deg, rgba(13, 12, 11, 0.92) 0%, rgba(13, 12, 11, 0.3) 48%, rgba(13, 12, 11, 0.66) 100%),
+    radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.38) 78%);
+}
+
+.path:hover .path-media,
+.path:focus-visible .path-media {
+  transform: scale(1.08);
+}
+
+.path:hover .path-overlay,
+.path:focus-visible .path-overlay {
+  opacity: 0.78;
+}
+
+.path-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 25rem;
+  display: grid;
+  gap: 0.62rem;
+}
+
+.path-copy strong {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(2.2rem, 4.5vw, 4.7rem);
+  line-height: 0.92;
+}
+
+.path-copy span:last-child {
+  max-width: 19rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.path::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border: 1px solid rgba(240, 196, 94, 0);
+  border-radius: inherit;
+  pointer-events: none;
+  transition: border-color 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
+}
+
+.path.is-pressed::after {
+  border-color: rgba(240, 196, 94, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(240, 196, 94, 0.24), 0 0 2.2rem rgba(240, 196, 94, 0.12);
+}
+
+.center {
+  position: relative;
+  z-index: 6;
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: 6rem 1rem 3rem;
+  text-align: center;
+  pointer-events: none;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.title-mask {
+  overflow: hidden;
+}
+
+.center h1 {
+  margin: 0;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(3.2rem, 7.4vw, 7.7rem);
+  line-height: 0.86;
+  letter-spacing: 0;
+}
+
+.line {
+  display: block;
+  transform-origin: left bottom;
+}
+
+.intro {
+  max-width: 28rem;
+  margin: 1.15rem 0 0;
+  color: rgba(255, 247, 236, 0.74);
+  font-size: clamp(0.95rem, 1.5vw, 1.08rem);
+  line-height: 1.55;
+}
+
+.split-line {
+  position: absolute;
+  left: 50%;
+  top: 10vh;
+  bottom: 10vh;
+  z-index: 5;
+  width: 1px;
+  transform-origin: center;
+  background: linear-gradient(transparent, rgba(255, 247, 236, 0.32), transparent);
+}
+
+.photo-stack {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.78;
+}
+
+.float-photo {
+  position: absolute;
+  width: clamp(6.5rem, 11vw, 12rem);
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border: 1px solid rgba(255, 247, 236, 0.28);
+  border-radius: 8px;
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.42);
+}
+
+.photo-a {
+  left: 31%;
+  top: 10%;
+  transform: rotate(-7deg);
+}
+
+.photo-b {
+  left: 54%;
+  bottom: 8%;
+  transform: rotate(6deg);
+}
+
+.photo-c {
+  left: 43%;
+  bottom: 4%;
+  width: clamp(7rem, 12vw, 13rem);
+  aspect-ratio: 16 / 10;
+  transform: rotate(-2deg);
+}
+
+@media (max-width: 900px) {
+  .landing {
+    min-height: 100svh;
+    background:
+      linear-gradient(0deg, rgba(12, 11, 10, 0.96), rgba(12, 11, 10, 0.5) 46%, rgba(12, 11, 10, 0.82)),
+      url("/assets/artify-landing-hero.png") 62% center / cover;
+  }
+
+  .topbar {
+    position: fixed;
+    padding: 1rem;
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .hero {
+    height: 100svh;
+    min-height: 100svh;
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    align-content: stretch;
+    padding: 4.8rem 0 0.85rem;
+  }
+
+  .center {
+    order: -1;
+    min-height: 0;
+    align-content: center;
+    padding: 0.5rem 1.25rem 1rem;
+  }
+
+  .path {
+    min-height: clamp(136px, 19svh, 170px);
+    margin: 0 1rem 0.62rem;
+    border: 1px solid rgba(255, 247, 236, 0.18);
+    border-radius: 22px;
+    padding: 1rem;
+    box-shadow: 0 1rem 3.5rem rgba(0, 0, 0, 0.34);
+    transform: translateZ(0);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .path-media {
+    border-radius: 22px;
+  }
+
+  .path-overlay {
+    border-radius: 22px;
+    background:
+      linear-gradient(90deg, rgba(13, 12, 11, 0.92), rgba(13, 12, 11, 0.32)),
+      linear-gradient(0deg, rgba(13, 12, 11, 0.68), rgba(13, 12, 11, 0.08));
+  }
+
+  .center h1 {
+    font-size: clamp(2.25rem, 12vw, 3.55rem);
+    line-height: 0.9;
+  }
+
+  .intro {
+    max-width: 19rem;
+    margin-top: 0.72rem;
+    font-size: 0.84rem;
+    line-height: 1.42;
+  }
+
+  .path-copy {
+    gap: 0.42rem;
+    transition: transform 220ms ease, opacity 220ms ease;
+  }
+
+  .path-copy strong {
+    font-size: clamp(1.95rem, 9vw, 2.75rem);
+  }
+
+  .path-copy span:last-child {
+    max-width: 16rem;
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .path:hover .path-media,
+  .path:focus-visible .path-media {
+    transform: none;
+  }
+
+  .path:hover .path-overlay,
+  .path:focus-visible .path-overlay {
+    opacity: 1;
+  }
+
+  .path.is-pressed {
+    transform: scale(0.985) translateZ(0);
+    box-shadow: 0 0.8rem 2.4rem rgba(0, 0, 0, 0.38);
+  }
+
+  .path.is-pressed .path-media {
+    transform: scale(1.025);
+  }
+
+  .path.is-pressed .path-copy {
+    transform: translateY(-3px);
+  }
+
+  .intro-copy {
+    width: min(100%, calc(100vw - 2rem));
+    padding: 0 1rem;
+  }
+
+  .intro-copy strong {
+    font-size: clamp(2.55rem, 15vw, 4.2rem);
+  }
+
+  .split-line,
+  .photo-stack,
+  .ambient {
+    display: none;
   }
 }

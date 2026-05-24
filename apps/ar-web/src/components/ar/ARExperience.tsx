@@ -19,6 +19,13 @@ const MINDSCRIPTS = [
   "/ar/libs/mindar-image-aframe.prod.js",
 ];
 
+const MINDAR_TRACKING_CONFIG = {
+  filterMinCF: 0.001,
+  filterBeta: 10,
+  warmupTolerance: 5,
+  missTolerance: 12,
+};
+
 function SceneByType({
   activeArtwork,
   active,
@@ -458,7 +465,7 @@ export default function ARExperience() {
           <a-scene
             id="museum-ar-scene"
             key={mindFileUrl}
-            mindar-image={`imageTargetSrc: ${mindFileUrl}; autoStart: false; maxTrack: 1; uiLoading: no; uiError: no; uiScanning: no`}
+            mindar-image={`imageTargetSrc: ${mindFileUrl}; autoStart: false; maxTrack: 1; filterMinCF: ${MINDAR_TRACKING_CONFIG.filterMinCF}; filterBeta: ${MINDAR_TRACKING_CONFIG.filterBeta}; warmupTolerance: ${MINDAR_TRACKING_CONFIG.warmupTolerance}; missTolerance: ${MINDAR_TRACKING_CONFIG.missTolerance}; uiLoading: no; uiError: no; uiScanning: no`}
             embedded
             color-space="sRGB"
             renderer="alpha: true; colorManagement: true"
