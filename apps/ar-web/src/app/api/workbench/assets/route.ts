@@ -8,6 +8,12 @@ const allowedTypes = new Set([
   "image/png",
   "image/webp",
   "image/gif",
+  "image/avif",
+  "image/bmp",
+  "image/svg+xml",
+  "image/tiff",
+  "image/heic",
+  "image/heif",
   "audio/mpeg",
   "audio/mp3",
   "audio/wav",
@@ -71,6 +77,12 @@ function extensionFor(file: File) {
   if (file.type === "image/png") return ".png";
   if (file.type === "image/webp") return ".webp";
   if (file.type === "image/gif") return ".gif";
+  if (file.type === "image/avif") return ".avif";
+  if (file.type === "image/bmp") return ".bmp";
+  if (file.type === "image/svg+xml") return ".svg";
+  if (file.type === "image/tiff") return ".tiff";
+  if (file.type === "image/heic") return ".heic";
+  if (file.type === "image/heif") return ".heif";
   if (file.type.includes("wav")) return ".wav";
   if (file.type.includes("mpeg") || file.type.includes("mp3")) return ".mp3";
   if (file.type === "video/webm") return ".webm";

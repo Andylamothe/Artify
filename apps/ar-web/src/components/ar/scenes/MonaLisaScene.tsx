@@ -7,8 +7,9 @@ interface Props {
 }
 
 export function MonaLisaScene({ artwork, active, lowPower }: Props) {
+  if (!active) return null;
+
   const count = lowPower ? artwork.effects.lowPowerParticleCount : artwork.effects.particleCount;
-  const glow = active ? "0.65" : "0.18";
 
   return (
     <>
@@ -17,7 +18,7 @@ export function MonaLisaScene({ artwork, active, lowPower }: Props) {
         radius-inner="0.34"
         radius-outer="0.43"
         position="0 0 0.02"
-        material={`opacity: ${glow}; transparent: true;`}
+        material="opacity: 0.55; transparent: true;"
         animation="property: rotation; to: 0 0 360; loop: true; dur: 16000; easing: linear"
       />
       <a-plane

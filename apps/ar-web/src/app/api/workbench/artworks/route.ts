@@ -33,30 +33,39 @@ async function readManifest(): Promise<WorkbenchManifest> {
 }
 
 function normalizeArtwork(artwork: ArtworkConfig, index: number): ArtworkConfig {
+  const starryNightLike = isStarryNightArtwork(artwork);
   return {
     ...artwork,
     id: artwork.id || slugify(artwork.title || `artwork-${index + 1}`),
-    title: artwork.title || `Artwork ${index + 1}`,
-    artist: artwork.artist || "Unknown artist",
-    year: artwork.year || "Unknown year",
-    shortSummary: artwork.shortSummary || "Museum AR artwork.",
-    historyText: artwork.historyText || "Historical notes can be added from the workbench.",
+    title: starryNightLike ? "Starry Night" : artwork.title || `Artwork ${index + 1}`,
+    artist: starryNightLike && artwork.artist === "Unknown artist" ? "Vincent van Gogh" : artwork.artist || "Unknown artist",
+    year: starryNightLike && artwork.year === "2026" ? "1889" : artwork.year || "Unknown year",
+    shortSummary: starryNightLike
+      ? "A night landscape transformed into rhythmic motion through bold brushwork, contrast, and emotional color."
+      : artwork.shortSummary || "Museum AR artwork.",
+    historyText: starryNightLike
+      ? "Created in Saint-Remy, the painting reflects van Gogh's expressive interpretation of the sky and remains one of the most recognized works in modern art history."
+      : artwork.historyText || "Historical notes can be added from the workbench.",
     targetIndex: Number.isFinite(artwork.targetIndex) ? artwork.targetIndex : index,
     targetImageUrl:
       artwork.targetImageUrl ||
       (artwork.id === "mona-lisa" ? "/ar/images/workbench-demo-art.webp" : artwork.historicalImages?.[0]) ||
       "",
-    audioUrl: artwork.audioUrl || "",
-    historicalImages: Array.isArray(artwork.historicalImages) ? artwork.historicalImages : [],
-    arSceneType: artwork.arSceneType || "monaLisa",
+    audioUrl: starryNightLike ? artwork.audioUrl || "/ar/audio/starry-night.wav" : artwork.audioUrl || "",
+    historicalImages: starryNightLike
+      ? uniqueStrings([...(Array.isArray(artwork.historicalImages) ? artwork.historicalImages : []), artwork.targetImageUrl])
+      : Array.isArray(artwork.historicalImages)
+        ? artwork.historicalImages
+        : [],
+    arSceneType: starryNightLike ? "starryNight" : artwork.arSceneType || "monaLisa",
     colors: {
-      primary: artwork.colors?.primary || "#2f6f61",
-      secondary: artwork.colors?.secondary || "#d7ece4",
-      accent: artwork.colors?.accent || "#d19a3a",
+      primary: starryNightLike ? "#1F3C88" : artwork.colors?.primary || "#2f6f61",
+      secondary: starryNightLike ? "#5A83E5" : artwork.colors?.secondary || "#d7ece4",
+      accent: starryNightLike ? "#F7C948" : artwork.colors?.accent || "#d19a3a",
     },
     effects: {
-      particleCount: clampNumber(artwork.effects?.particleCount, 20, 150, 80),
-      lowPowerParticleCount: clampNumber(artwork.effects?.lowPowerParticleCount, 10, 80, 35),
+      particleCount: clampNumber(artwork.effects?.particleCount, 0, 90, 45),
+      lowPowerParticleCount: clampNumber(artwork.effects?.lowPowerParticleCount, 0, 36, 18),
       intensity: artwork.effects?.intensity === "medium" ? "medium" : "low",
     },
     arObjects: Array.isArray(artwork.arObjects)
@@ -66,6 +75,62 @@ function normalizeArtwork(artwork: ArtworkConfig, index: number): ArtworkConfig 
           type: object.type || "text",
           text: object.text || "",
           src: object.src || "",
+          icon: object.icon || "",
+          actionType: object.actionType || "none",
+          actionUrl: object.actionUrl || "",
+          brushPoints: Array.isArray(object.brushPoints)
+            ? object.brushPoints
+                .filter((point) => Number.isFinite(point?.x) && Number.isFinite(point?.y))
+                .map((point) => ({
+                  x: clampFloat(point.x, -3, 3, 0),
+                  y: clampFloat(point.y, -3, 3, 0),
+                }))
+            : [],
+          brushAnimation:
+            object.brushAnimation === "pulse" || object.brushAnimation === "wave" ? object.brushAnimation : "flow",
+          brushSpeed: clampFloat(object.brushSpeed, 0.1, 4, 1),
+          brushWidth: clampFloat(object.brushWidth, 0.01, 0.16, 0.045),
+          motionBrush: object.motionBrush
+            ? {
+                maskDataUrl: object.motionBrush.maskDataUrl || "",
+                paths: Array.isArray(object.motionBrush.paths)
+                  ? object.motionBrush.paths
+                      .filter((path) => path?.from && path?.to)
+                      .map((path, pathIndex) => ({
+                        id: path.id || `motion-path-${pathIndex + 1}`,
+                        from: {
+                          x: clampFloat(path.from.x, 0, 1, 0),
+                          y: clampFloat(path.from.y, 0, 1, 0),
+                        },
+                        to: {
+                          x: clampFloat(path.to.x, 0, 1, 0),
+                          y: clampFloat(path.to.y, 0, 1, 0),
+                        },
+                        speed: clampFloat(path.speed, 0.1, 5, 1),
+                        force: clampFloat(path.force, 0, 2, 1),
+                      }))
+                  : [],
+                settings: {
+                  brushSize: clampFloat(object.motionBrush.settings?.brushSize, 1, 200, 42),
+                  feather: clampFloat(object.motionBrush.settings?.feather, 0, 120, 18),
+                  speed: clampFloat(object.motionBrush.settings?.speed, 0.1, 5, 1),
+                  intensity: clampFloat(object.motionBrush.settings?.intensity, 0, 2, 0.55),
+                  distortionStrength: clampFloat(object.motionBrush.settings?.distortionStrength, 0, 2, 0.42),
+                  loopDuration: clampNumber(object.motionBrush.settings?.loopDuration, 300, 8000, 1800),
+                  opacity: clampFloat(object.motionBrush.settings?.opacity, 0, 1, 1),
+                },
+                previewEnabled: !!object.motionBrush.previewEnabled,
+              }
+            : undefined,
+          portfolioItems: Array.isArray(object.portfolioItems)
+            ? object.portfolioItems
+                .filter((item) => item?.src)
+                .map((item, itemIndex) => ({
+                  id: item.id || `portfolio-item-${itemIndex + 1}`,
+                  title: item.title || `Artwork ${itemIndex + 1}`,
+                  src: item.src,
+                }))
+            : [],
           color: object.color || "#ffffff",
           opacity: clampFloat(object.opacity, 0.05, 1, 1),
           width: clampFloat(object.width, 0.05, 3, 0.5),
@@ -88,6 +153,15 @@ function normalizeArtwork(artwork: ArtworkConfig, index: number): ArtworkConfig 
         }))
       : [],
   };
+}
+
+function isStarryNightArtwork(artwork: ArtworkConfig) {
+  const fingerprint = `${artwork.id ?? ""} ${artwork.title ?? ""} ${artwork.targetImageUrl ?? ""}`.toLowerCase();
+  return fingerprint.includes("starry-night") || fingerprint.includes("starring-night") || fingerprint.includes("starrynight");
+}
+
+function uniqueStrings(values: Array<string | undefined>) {
+  return Array.from(new Set(values.filter((value): value is string => !!value)));
 }
 
 export async function GET() {

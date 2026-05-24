@@ -7,10 +7,11 @@ interface Props {
 }
 
 export function ScreamScene({ artwork, active, lowPower }: Props) {
+  if (!active) return null;
+
   const count = lowPower ? artwork.effects.lowPowerParticleCount : artwork.effects.particleCount;
   const pulseDur = lowPower ? 1600 : 900;
   const jitterDur = lowPower ? 1800 : 900;
-  const opacity = active ? 0.4 : 0.14;
 
   return (
     <>
@@ -19,7 +20,7 @@ export function ScreamScene({ artwork, active, lowPower }: Props) {
         height="0.76"
         position="0 0 0.01"
         color={artwork.colors.primary}
-        material={`transparent: true; opacity: ${opacity}`}
+        material="transparent: true; opacity: 0.34"
         animation={`property: scale; to: 1.06 1.06 1; loop: true; dir: alternate; dur: ${pulseDur}; easing: easeInOutSine`}
       />
       <a-ring

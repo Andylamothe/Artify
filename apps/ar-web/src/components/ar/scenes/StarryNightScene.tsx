@@ -1,4 +1,6 @@
 import { ArtworkConfig } from "@/types/ar";
+import { useEffect, useState } from "react";
+import { registerStarryNightExperience } from "./starry-night/registerStarryNightExperience";
 
 interface Props {
   artwork: ArtworkConfig;
@@ -7,8 +9,40 @@ interface Props {
 }
 
 export function StarryNightScene({ artwork, active, lowPower }: Props) {
+  const [experienceReady, setExperienceReady] = useState(false);
+
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    let retryId = 0;
+
+    const register = () => {
+      if (cancelled) return;
+      const ready = registerStarryNightExperience();
+      setExperienceReady(ready);
+      if (!ready) {
+        retryId = window.setTimeout(register, 100);
+      }
+    };
+
+    register();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(retryId);
+    };
+  }, [active]);
+
+  if (!active) return null;
+
+  if (experienceReady) {
+    return (
+      <a-entity
+        starry-night-experience={`active: ${active}; lowPower: ${lowPower}; targetAspect: 1.333`}
+      />
+    );
+  }
+
   const count = lowPower ? artwork.effects.lowPowerParticleCount : artwork.effects.particleCount;
-  const opacity = active ? 0.42 : 0.14;
 
   return (
     <>
@@ -16,7 +50,7 @@ export function StarryNightScene({ artwork, active, lowPower }: Props) {
         color={artwork.colors.primary}
         radius="0.54"
         position="0 0 0.01"
-        material={`transparent: true; opacity: ${opacity}`}
+        material="transparent: true; opacity: 0.36"
         animation="property: rotation; to: 0 0 -360; loop: true; dur: 18000; easing: linear"
       />
       <a-ring

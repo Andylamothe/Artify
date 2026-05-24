@@ -3,25 +3,15 @@
 import { artworks as defaultArtworks } from "@/data/artworks";
 import { useArtworkAudio } from "@/hooks/ar/useArtworkAudio";
 import { useLowPowerMode } from "@/hooks/ar/useLowPowerMode";
-import { ArtworkConfig, TrackingStatus } from "@/types/ar";
+import { ARObjectConfig, ArtworkConfig, TrackingStatus } from "@/types/ar";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArtworkOverlay } from "@/components/ar/ArtworkOverlay";
 import { FallbackMuseumMode } from "@/components/ar/FallbackMuseumMode";
 import { MonaLisaScene } from "@/components/ar/scenes/MonaLisaScene";
 import { StarryNightScene } from "@/components/ar/scenes/StarryNightScene";
 import { ScreamScene } from "@/components/ar/scenes/ScreamScene";
-import { ARInfoPanel } from "@/components/ar/scenes/ARInfoPanel";
 import { ARCustomObjects } from "@/components/ar/scenes/ARCustomObjects";
-
-declare global {
-  interface Window {
-    AFRAME?: {
-      scenes: Array<{
-        systems?: Record<string, { start?: () => void; stop?: () => void }>;
-      }>;
-    };
-  }
-}
+import AccessibilityOverlay from "@/components/accessibility/AccessibilityOverlay";
 
 const MINDSCRIPTS = [
   "/ar/libs/aframe.min.js",
@@ -33,29 +23,31 @@ function SceneByType({
   activeArtwork,
   active,
   lowPower,
-  showDetails,
-  muted,
-  onToggleDetails,
-  onToggleMuted,
+  panelMode,
+  galleryIndex,
+  onPanelClose,
+  onGalleryStep,
+  onObjectAction,
 }: {
   activeArtwork: ArtworkConfig;
   active: boolean;
   lowPower: boolean;
-  showDetails: boolean;
-  muted: boolean;
-  onToggleDetails: () => void;
-  onToggleMuted: () => void;
+  panelMode: "history" | "gallery" | "portfolio" | "artworks" | null;
+  galleryIndex: number;
+  onPanelClose: () => void;
+  onGalleryStep: (direction: -1 | 1) => void;
+  onObjectAction: (object: ARObjectConfig) => void;
 }) {
   const panel = (
     <>
-      <ARInfoPanel
+      <ARCustomObjects artworkId={activeArtwork.id} objects={activeArtwork.arObjects} active={active} onAction={onObjectAction} />
+      <ARTargetPanel
         artwork={activeArtwork}
-        showDetails={showDetails}
-        muted={muted}
-        onToggleDetails={onToggleDetails}
-        onToggleMuted={onToggleMuted}
+        mode={active ? panelMode : null}
+        galleryIndex={galleryIndex}
+        onClose={onPanelClose}
+        onStep={onGalleryStep}
       />
-      <ARCustomObjects objects={activeArtwork.arObjects} active={active} />
     </>
   );
 
@@ -91,17 +83,33 @@ export default function ARExperience() {
   const [trackingStatus, setTrackingStatus] = useState<TrackingStatus>("idle");
   const [activeArtwork, setActiveArtwork] = useState<ArtworkConfig | null>(null);
   const [artworkList, setArtworkList] = useState<ArtworkConfig[]>(defaultArtworks);
+  const [mindFileUrl, setMindFileUrl] = useState("/ar/targets/artworks.mind");
+  const [overlayPanel, setOverlayPanel] = useState<"history" | "gallery" | "portfolio" | "artworks" | null>(null);
+  const [galleryIndex, setGalleryIndex] = useState(0);
   const [scriptsReady, setScriptsReady] = useState(false);
   const [scriptsError, setScriptsError] = useState<string | null>(null);
   const [compatibilityHint, setCompatibilityHint] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
-  const [showArDetails, setShowArDetails] = useState(false);
+  const [voiceAssistantEnabled, setVoiceAssistantEnabled] = useState(false);
   const mountedRef = useRef(true);
   const sceneMounted = mode === "tracking" && scriptsReady;
   const { lowPower, setLowPower } = useLowPowerMode();
   const artworksByTargetIndex = useMemo(
-    () => new Map(artworkList.map((artwork) => [artwork.targetIndex, artwork])),
+    () => new Map(artworkList.filter((artwork) => artwork.targetIndex >= 0).map((artwork) => [artwork.targetIndex, artwork])),
     [artworkList],
+  );
+  const trackableArtworks = useMemo(
+    () => artworkList.filter((artwork) => artwork.targetIndex >= 0),
+    [artworkList],
+  );
+  const arVideoAssets = useMemo(
+    () =>
+      trackableArtworks.flatMap((artwork) =>
+        (artwork.arObjects ?? [])
+          .filter((object) => object.type === "video" && !!object.src)
+          .map((object) => ({ artworkId: artwork.id, object })),
+      ),
+    [trackableArtworks],
   );
 
   const shouldPlayAudio = trackingStatus === "detected";
@@ -111,6 +119,42 @@ export default function ARExperience() {
       activeArtwork,
       shouldPlay: shouldPlayAudio,
     });
+
+  useEffect(() => {
+    const onAccessibilityStarted = () => {
+      pause();
+    };
+    window.addEventListener("artify-accessibility-started", onAccessibilityStarted);
+    return () => {
+      window.removeEventListener("artify-accessibility-started", onAccessibilityStarted);
+    };
+  }, [pause]);
+
+  useEffect(() => {
+    if (voiceAssistantEnabled) {
+      pause();
+    }
+  }, [pause, voiceAssistantEnabled]);
+
+  useEffect(() => {
+    const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video[data-artify-ar-video='true']"));
+    if (trackingStatus !== "detected" || !activeArtwork) {
+      videos.forEach((video) => video.pause());
+      return;
+    }
+
+    videos.forEach((video) => {
+      const isActiveArtwork = video.dataset.artworkId === activeArtwork.id;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      if (isActiveArtwork) {
+        void video.play().catch(() => undefined);
+      } else {
+        video.pause();
+      }
+    });
+  }, [activeArtwork, trackingStatus]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -124,12 +168,17 @@ export default function ARExperience() {
 
     fetch("/api/workbench/artworks", { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
-      .then((manifest: { artworks?: ArtworkConfig[] } | null) => {
+      .then((manifest: { artworks?: ArtworkConfig[]; mindFile?: string; updatedAt?: string } | null) => {
         if (cancelled || !manifest?.artworks?.length) return;
         setArtworkList(manifest.artworks);
+        const mindFile = manifest.mindFile || "/ar/targets/artworks.mind";
+        const version = manifest.updatedAt || String(Date.now());
+        const separator = mindFile.includes("?") ? "&" : "?";
+        setMindFileUrl(`${mindFile}${separator}v=${encodeURIComponent(version)}`);
       })
       .catch(() => {
         setArtworkList(defaultArtworks);
+        setMindFileUrl(`/ar/targets/artworks.mind?v=${Date.now()}`);
       });
 
     return () => {
@@ -186,19 +235,18 @@ export default function ARExperience() {
   useEffect(() => {
     if (!sceneMounted) return;
 
-    const targetElements = artworkList.map((artwork) =>
+    const targetElements = trackableArtworks.map((artwork) =>
       document.getElementById(`target-${artwork.targetIndex}`)
     );
     const handlers: Array<() => void> = [];
 
     targetElements.forEach((element, arrayIndex) => {
       if (!element) return;
-      const configuredTargetIndex = artworkList[arrayIndex]?.targetIndex;
+      const configuredTargetIndex = trackableArtworks[arrayIndex]?.targetIndex;
       const onFound = () => {
         const artwork = artworksByTargetIndex.get(configuredTargetIndex);
         if (!artwork) return;
         setActiveArtwork(artwork);
-        setShowArDetails(false);
         setTrackingStatus("detected");
       };
       const onLost = () => {
@@ -227,7 +275,7 @@ export default function ARExperience() {
       sceneElement?.removeEventListener("arReady", onReady);
       sceneElement?.removeEventListener("arError", onError);
     };
-  }, [artworkList, artworksByTargetIndex, pause, sceneMounted]);
+  }, [artworksByTargetIndex, pause, sceneMounted, trackableArtworks]);
 
   useEffect(() => {
     if (mode !== "tracking" || trackingStatus !== "starting") return;
@@ -252,9 +300,9 @@ export default function ARExperience() {
     const startWhenReady = () => {
       if (cancelled || startedAr) return;
       const arSystem = (
-        sceneElement as unknown as { systems?: Record<string, { start?: () => void }> }
+        sceneElement as unknown as { systems?: Record<string, { start?: () => void; ui?: unknown; imageTargetSrc?: string }> }
       ).systems?.["mindar-image-system"];
-      if (!arSystem?.start) {
+      if (!arSystem?.start || !arSystem.ui || !arSystem.imageTargetSrc) {
         window.setTimeout(startWhenReady, 100);
         return;
       }
@@ -275,8 +323,15 @@ export default function ARExperience() {
 
   useEffect(() => {
     return () => {
-      if (window.AFRAME?.scenes?.length) {
-        window.AFRAME.scenes.forEach((scene) => {
+      const aframe = window.AFRAME as
+        | {
+            scenes?: Array<{
+              systems?: Record<string, { start?: () => void; stop?: () => void }>;
+            }>;
+          }
+        | undefined;
+      if (aframe?.scenes?.length) {
+        aframe.scenes.forEach((scene) => {
           const system = scene.systems?.["mindar-image-system"];
           system?.stop?.();
         });
@@ -333,6 +388,37 @@ export default function ARExperience() {
     setIsStarting(false);
   };
 
+  const handleARObjectAction = (object: ARObjectConfig) => {
+    const action = object.actionType ?? "none";
+    if (action === "openLink" && object.actionUrl) {
+      window.open(object.actionUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (action === "nextImage") {
+      setOverlayPanel("gallery");
+      setGalleryIndex((current) => {
+        const total = Math.max(1, activeOrDefault.historicalImages.length);
+        return (current + 1) % total;
+      });
+      return;
+    }
+    if (action === "history" || action === "gallery" || action === "portfolio" || action === "artworks") {
+      setOverlayPanel(action);
+    }
+  };
+
+  const stepGallery = (direction: -1 | 1) => {
+    const images = activeOrDefault.historicalImages.length
+      ? activeOrDefault.historicalImages
+      : activeOrDefault.targetImageUrl
+        ? [activeOrDefault.targetImageUrl]
+        : [];
+    setGalleryIndex((current) => {
+      const total = Math.max(1, images.length);
+      return (current + direction + total) % total;
+    });
+  };
+
   return (
     <div className="ar-page">
       {mode === "start" ? (
@@ -371,7 +457,8 @@ export default function ARExperience() {
         <div className="ar-canvas-wrap">
           <a-scene
             id="museum-ar-scene"
-            mindar-image="imageTargetSrc: /ar/targets/artworks.mind; autoStart: false; maxTrack: 1; uiLoading: no; uiError: no; uiScanning: no"
+            key={mindFileUrl}
+            mindar-image={`imageTargetSrc: ${mindFileUrl}; autoStart: false; maxTrack: 1; uiLoading: no; uiError: no; uiScanning: no`}
             embedded
             color-space="sRGB"
             renderer="alpha: true; colorManagement: true"
@@ -379,13 +466,34 @@ export default function ARExperience() {
             vr-mode-ui="enabled: false"
             device-orientation-permission-ui="enabled: false"
           >
+            <a-assets timeout="15000">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img id="icon-left" src="/ar/icons/left.png" alt="" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img id="icon-right" src="/ar/icons/right.png" alt="" />
+              {arVideoAssets.map(({ artworkId, object }) => (
+                <video
+                  key={`${artworkId}-${object.id}-${object.src}`}
+                  id={arVideoAssetId(artworkId, object.id)}
+                  data-artify-ar-video="true"
+                  data-artwork-id={artworkId}
+                  src={workbenchAssetPlaybackUrl(object.src || "")}
+                  crossOrigin="anonymous"
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                  preload="auto"
+                />
+              ))}
+            </a-assets>
             <a-camera
               position="0 0 0"
               look-controls="enabled: false"
               cursor="rayOrigin: mouse; fuse: false"
               raycaster="objects: .ar-clickable; near: 0; far: 10000"
             />
-            {artworkList.map((artwork) => (
+            {trackableArtworks.map((artwork) => (
               <a-entity
                 key={artwork.id}
                 id={`target-${artwork.targetIndex}`}
@@ -395,10 +503,11 @@ export default function ARExperience() {
                   activeArtwork={artwork}
                   active={activeArtwork?.id === artwork.id}
                   lowPower={lowPower}
-                  showDetails={showArDetails}
-                  muted={muted}
-                  onToggleDetails={() => setShowArDetails((value) => !value)}
-                  onToggleMuted={toggleMuted}
+                  panelMode={activeArtwork?.id === artwork.id ? overlayPanel : null}
+                  galleryIndex={galleryIndex}
+                  onPanelClose={() => setOverlayPanel(null)}
+                  onGalleryStep={stepGallery}
+                  onObjectAction={handleARObjectAction}
                 />
               </a-entity>
             ))}
@@ -421,9 +530,306 @@ export default function ARExperience() {
           audioError={scriptsError ?? audioError}
           requiresManualPlay={requiresManualPlay}
           onManualPlay={tryPlayManually}
+          voiceAssistantEnabled={voiceAssistantEnabled}
+          onToggleVoiceAssistant={() => setVoiceAssistantEnabled((enabled) => !enabled)}
         />
       ) : null}
 
+      {started ? (
+        <AccessibilityOverlay
+          enabled={voiceAssistantEnabled}
+          activeArtwork={activeArtwork}
+          artworks={artworkList}
+          onDisable={() => setVoiceAssistantEnabled(false)}
+        />
+      ) : null}
+
+      {started && activeOrDefault && overlayPanel && mode !== "tracking" ? (
+        <ARInteractionPanel
+          mode={overlayPanel}
+          artwork={activeOrDefault}
+          artworks={artworkList}
+          galleryIndex={galleryIndex}
+          setGalleryIndex={setGalleryIndex}
+          onClose={() => setOverlayPanel(null)}
+          onSelectArtwork={setActiveArtwork}
+        />
+      ) : null}
+
+    </div>
+  );
+}
+
+function ARTargetPanel({
+  artwork,
+  mode,
+  galleryIndex,
+  onClose,
+  onStep,
+}: {
+  artwork: ArtworkConfig;
+  mode: "history" | "gallery" | "portfolio" | "artworks" | null;
+  galleryIndex: number;
+  onClose: () => void;
+  onStep: (direction: -1 | 1) => void;
+}) {
+  if (!mode) return null;
+
+  const images = artwork.historicalImages.length ? artwork.historicalImages : artwork.targetImageUrl ? [artwork.targetImageUrl] : [];
+  const visibleImages = images.slice(0, 8);
+  const currentIndex = visibleImages.length ? galleryIndex % visibleImages.length : 0;
+  const imageWidth = 0.92;
+  const imageHeight = 0.52;
+
+  if (mode === "history") {
+    return (
+      <a-entity id={`${artwork.id}-history-panel`} position="0 0 0.82">
+        <a-plane width="1.08" height="0.66" color="#fffaf0" material="transparent: true; opacity: 0.94" />
+        <a-text value="History" color="#111111" align="center" width="1.7" position="0 0.25 0.018" />
+        <a-text
+          value={artwork.historyText}
+          color="#111111"
+          align="center"
+          width="0.94"
+          wrap-count="34"
+          position="0 -0.03 0.018"
+        />
+        <ARPanelCloseButton onClick={onClose} />
+      </a-entity>
+    );
+  }
+
+  if (mode !== "portfolio" && mode !== "gallery") return null;
+
+  return (
+    <a-entity id={`${artwork.id}-portfolio-panel`} position="0 0 0.82">
+      <a-plane width="1.08" height="0.74" color="#fffaf0" material="transparent: true; opacity: 0.94" />
+      <a-text
+        value={mode === "portfolio" ? "Portfolio" : "Gallery"}
+        color="#111111"
+        align="center"
+        width="1.8"
+        position="0 0.35 0.018"
+      />
+      {visibleImages.length ? (
+        visibleImages.map((image, index) => (
+          <a-image
+            key={`${artwork.id}-portfolio-${image}-${index}`}
+            src={image}
+            visible={index === currentIndex}
+            alpha-test="0.5"
+            position="0 0.02 0.026"
+            width={imageWidth}
+            height={imageHeight}
+          />
+        ))
+      ) : (
+        <a-text
+          value="No images yet"
+          color="#111111"
+          align="center"
+          width="1"
+          position="0 0.02 0.026"
+        />
+      )}
+      <a-plane
+        class="ar-clickable"
+        width="0.14"
+        height="0.14"
+        color="#111111"
+        material={`transparent: true; opacity: ${visibleImages.length > 1 ? 0.9 : 0.28}`}
+        position="-0.64 0.02 0.04"
+        onClick={() => visibleImages.length > 1 && onStep(-1)}
+      />
+      <a-text value="<" color="#ffffff" align="center" width="0.55" position="-0.64 0.005 0.052" />
+      <a-plane
+        class="ar-clickable"
+        width="0.14"
+        height="0.14"
+        color="#111111"
+        material={`transparent: true; opacity: ${visibleImages.length > 1 ? 0.9 : 0.28}`}
+        position="0.64 0.02 0.04"
+        onClick={() => visibleImages.length > 1 && onStep(1)}
+      />
+      <a-text value=">" color="#ffffff" align="center" width="0.55" position="0.64 0.005 0.052" />
+      <a-text
+        value={`${Math.min(currentIndex + 1, Math.max(1, visibleImages.length))} / ${Math.max(1, visibleImages.length)}`}
+        color="#111111"
+        align="center"
+        width="0.7"
+        position="0 -0.34 0.028"
+      />
+      <ARPanelCloseButton onClick={onClose} />
+    </a-entity>
+  );
+}
+
+function arVideoAssetId(artworkId: string, objectId: string) {
+  return `ar-video-${cssSafeId(artworkId)}-${cssSafeId(objectId)}`;
+}
+
+function cssSafeId(value: string) {
+  return value.replace(/[^a-zA-Z0-9_-]/g, "-");
+}
+
+function workbenchAssetPlaybackUrl(url: string) {
+  if (!url.startsWith("/ar/workbench/assets/")) return url;
+  return url.replace(/^\/ar\/workbench\/assets\//, "/api/workbench/assets/");
+}
+
+function ARPanelCloseButton({ onClick }: { onClick: () => void }) {
+  return (
+    <>
+      <a-plane
+        class="ar-clickable"
+        width="0.14"
+        height="0.14"
+        color="#111111"
+        position="0.48 0.31 0.04"
+        onClick={onClick}
+      />
+      <a-text value="x" color="#ffffff" align="center" width="0.5" position="0.48 0.295 0.052" />
+    </>
+  );
+}
+
+function ARInteractionPanel({
+  mode,
+  artwork,
+  artworks,
+  galleryIndex,
+  setGalleryIndex,
+  onClose,
+  onSelectArtwork,
+}: {
+  mode: "history" | "gallery" | "portfolio" | "artworks";
+  artwork: ArtworkConfig;
+  artworks: ArtworkConfig[];
+  galleryIndex: number;
+  setGalleryIndex: (updater: (current: number) => number) => void;
+  onClose: () => void;
+  onSelectArtwork: (artwork: ArtworkConfig) => void;
+}) {
+  const images = artwork.historicalImages.length ? artwork.historicalImages : artwork.targetImageUrl ? [artwork.targetImageUrl] : [];
+  const changeImage = (direction: -1 | 1) => {
+    setGalleryIndex((current) => {
+      const total = Math.max(1, images.length);
+      return (current + direction + total) % total;
+    });
+  };
+
+  return (
+    <div className="ar-interaction-panel">
+      <div className="ar-panel-heading">
+        <div>
+          <span>{mode}</span>
+          <strong>{artwork.title}</strong>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Close AR panel">
+          ×
+        </button>
+      </div>
+
+      {mode === "history" ? <p>{artwork.historyText}</p> : null}
+
+      {mode === "portfolio" ? (
+        <div className="ar-panel-list">
+          <div className="ar-portfolio-copy">
+            <p>{artwork.artist}</p>
+            <p>{artwork.shortSummary}</p>
+          </div>
+          <ARPhotoCarousel
+            images={images}
+            galleryIndex={galleryIndex}
+            onPrevious={() => changeImage(-1)}
+            onNext={() => changeImage(1)}
+            emptyLabel="No portfolio photo yet."
+          />
+          {artworks
+            .filter((item) => item.artist === artwork.artist)
+            .map((item) => (
+              <button key={item.id} type="button" onClick={() => onSelectArtwork(item)}>
+                {item.title} · {item.year}
+              </button>
+            ))}
+        </div>
+      ) : null}
+
+      {mode === "artworks" ? (
+        <div className="ar-panel-list">
+          {artworks.map((item) => (
+            <button key={item.id} type="button" onClick={() => onSelectArtwork(item)}>
+              {item.title} · {item.artist}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {mode === "gallery" ? (
+        <ARPhotoCarousel
+          images={images}
+          galleryIndex={galleryIndex}
+          onPrevious={() => changeImage(-1)}
+          onNext={() => changeImage(1)}
+          emptyLabel="No historical image yet."
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ARPhotoCarousel({
+  images,
+  galleryIndex,
+  onPrevious,
+  onNext,
+  emptyLabel,
+}: {
+  images: string[];
+  galleryIndex: number;
+  onPrevious: () => void;
+  onNext: () => void;
+  emptyLabel: string;
+}) {
+  const total = images.length;
+  const currentIndex = total ? galleryIndex % total : 0;
+  const currentImage = total ? images[currentIndex] : "";
+
+  return (
+    <div className="ar-gallery-panel">
+      <div className="ar-photo-carousel">
+        {currentImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={currentImage} alt="" />
+        ) : (
+          <p className="ar-photo-empty">{emptyLabel}</p>
+        )}
+        {total > 0 ? (
+          <>
+            <button
+              type="button"
+              className="ar-photo-nav is-left"
+              onClick={onPrevious}
+              disabled={total <= 1}
+              aria-label="Previous photo"
+            >
+              {"<"}
+            </button>
+            <button
+              type="button"
+              className="ar-photo-nav is-right"
+              onClick={onNext}
+              disabled={total <= 1}
+              aria-label="Next photo"
+            >
+              {">"}
+            </button>
+            <span className="ar-photo-counter">
+              {currentIndex + 1} / {total}
+            </span>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -33,9 +33,21 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .lt.log
+.next-start-*.log
+.next-start-*.err.log
+apps/*/.next-start-*.log
+apps/*/.next-start-*.err.log
+.portfolio-dev-*.log
+.portfolio-dev-*.err.log
+apps/*/.portfolio-dev-*.log
+apps/*/.portfolio-dev-*.err.log
 
 # env files (can opt-in for committing if needed)
 .env*
+# But always commit example/template files — they contain no secrets
+!.env.example
+!.env.template
+!.env.sample
 
 # vercel
 .vercel
@@ -50,9 +62,22 @@ AGENTS.md
 certificates/
 apps/*/certificates/
 
+# GCP service account keys — NEVER commit these
+*-service-account*.json
+*service_account*.json
+gcp-*.json
+secrets/
+apps/*/secrets/
+apps/*/creds/
+# Match the exact pattern of a downloaded GCP service-account JSON: <project-id>-<key-id>.json
+totemic-veld-*.json
+
 # local operational scripts
 scripts/
 apps/*/scripts/
 
 # local reference repos
 apps/*/import/
+
+# local app runtime data
+apps/social-artify/data/users.json

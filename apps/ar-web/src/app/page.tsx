@@ -1,25 +1,25 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
-    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: "2rem" }}>
-      <div style={{ textAlign: "center", maxWidth: 700 }}>
-        <h1 style={{ marginBottom: "1rem" }}>Hack The Summit AR Museum</h1>
-        <p style={{ marginBottom: "1.4rem", lineHeight: 1.5 }}>
-          Launch the mobile-first AR experience to scan artworks and reveal unique visual effects, history, and audio narration.
+    <main className="artify-gateway">
+      <div className="artify-gateway-media" aria-hidden="true" />
+      <section className="artify-gateway-content" aria-label="Choose Artify mode">
+        <p className="artify-gateway-kicker">Artify</p>
+        <h1>Choose how you want to experience art.</h1>
+        <p>
+          Start the museum scanner when you are standing in front of an artwork, or open the social
+          platform to discover, like, save, and launch AR-ready pieces.
         </p>
-        <a
-          href="/ar"
-          style={{
-            display: "inline-block",
-            background: "#12263a",
-            color: "#fff",
-            padding: "0.8rem 1.2rem",
-            borderRadius: 12,
-            fontWeight: 600,
-          }}
-        >
-          Open AR Experience
-        </a>
-      </div>
+        <div className="artify-gateway-actions">
+          <Link className="artify-gateway-primary" href="/ar">
+            I am in a museum
+          </Link>
+          <Link className="artify-gateway-secondary" href="/social">
+            Open social platform
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

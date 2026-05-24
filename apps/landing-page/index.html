@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Artify</title>
+    <meta name="description" content="Choose between Artify Social Hub and Artify AR mode." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;650;750;850&family=Playfair+Display:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="landing" data-landing>
+      <div class="intro-scene" data-intro>
+        <div class="intro-art"></div>
+        <div class="intro-vignette"></div>
+        <div class="intro-copy">
+          <span>Artify</span>
+          <strong>Enter the museum.</strong>
+          <button class="enter-button" type="button" data-enter>
+            <span>Enter</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h13" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="ambient ambient-left" aria-hidden="true"></div>
+      <div class="ambient ambient-right" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
+
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Artify home">Artify<span>.</span></a>
+        <nav class="nav" aria-label="Experience shortcuts">
+          <a href="/social">Social Hub</a>
+          <a href="/ar">AR Mode</a>
+        </nav>
+      </header>
+
+      <section class="hero" data-camera aria-label="Choose your Artify experience">
+        <a class="path path-social" href="/social" data-path="social" aria-label="Open Social Hub">
+          <span class="path-media" aria-hidden="true"></span>
+          <span class="path-overlay" aria-hidden="true"></span>
+          <span class="path-copy">
+            <strong>Discovery</strong>
+            <span>Find art that feels personal, shaped by your taste, preferences, and favorite pieces.</span>
+          </span>
+        </a>
+
+        <section class="center" aria-label="Artify intro">
+          <div class="title-mask">
+            <h1>
+              <span class="line">Choose</span>
+              <span class="line">your way</span>
+              <span class="line">into art.</span>
+            </h1>
+          </div>
+          <p class="intro">
+            Go left for the social platform. Go right for the AR scanner. Same museum energy,
+            two smooth ways to enter Artify.
+          </p>
+        </section>
+
+        <a class="path path-ar" href="/ar" data-path="ar" aria-label="Open AR Mode">
+          <span class="path-media" aria-hidden="true"></span>
+          <span class="path-overlay" aria-hidden="true"></span>
+          <span class="path-copy">
+            <strong>AR Mode</strong>
+            <span>Scan the artwork and unlock the interactive layer.</span>
+          </span>
+        </a>
+
+        <div class="split-line" aria-hidden="true"></div>
+
+        <div class="photo-stack" aria-hidden="true">
+          <img class="float-photo photo-a" src="./assets/yellow-house.webp" alt="" />
+          <img class="float-photo photo-b" src="./assets/van-gogh-self.webp" alt="" />
+          <img class="float-photo photo-c" src="./assets/background-gallery.webp" alt="" />
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>

@@ -12,6 +12,8 @@ interface Props {
   audioError: string | null;
   requiresManualPlay: boolean;
   onManualPlay: () => void;
+  voiceAssistantEnabled: boolean;
+  onToggleVoiceAssistant: () => void;
 }
 
 export function ArtworkOverlay({
@@ -24,6 +26,8 @@ export function ArtworkOverlay({
   audioError,
   requiresManualPlay,
   onManualPlay,
+  voiceAssistantEnabled,
+  onToggleVoiceAssistant,
 }: Props) {
   const statusLabel = useTrackingStatusLabel(trackingStatus);
   const scanHint =
@@ -42,6 +46,14 @@ export function ArtworkOverlay({
         <div className="overlay-controls-row">
           <button type="button" className="chip" onClick={onToggleMuted}>
             {muted ? "Unmute" : "Mute"}
+          </button>
+          <button
+            type="button"
+            className={`chip ${voiceAssistantEnabled ? "chip-active" : ""}`}
+            onClick={onToggleVoiceAssistant}
+            aria-pressed={voiceAssistantEnabled}
+          >
+            Voice Assistant
           </button>
           <PerformanceControls lowPower={lowPower} setLowPower={setLowPower} />
           {requiresManualPlay ? (
