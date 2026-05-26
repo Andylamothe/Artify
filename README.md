@@ -126,6 +126,13 @@ Variables clés utilisées par les features IA:
 - `VERTEX_AI_LOCATION`
 - `VERTEX_AI_MODEL`
 
+## Collaborateurs
+
+Ajoutez ici les noms des collaborateurs du projet:
+- [ ] Nom du collaborateur 1
+- [ ] Nom du collaborateur 2
+- [ ] Nom du collaborateur 3
+
 ## Références projet
 
 - `/tmp/workspace/Andylamothe/Artify/message.txt` (inventaire détaillé des features)
