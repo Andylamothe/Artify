@@ -129,9 +129,9 @@ Variables clés utilisées par les features IA:
 ## Collaborateurs
 
 Ajoutez ici les noms des collaborateurs du projet:
-- [ ] Nom du collaborateur 1
-- [ ] Nom du collaborateur 2
-- [ ] Nom du collaborateur 3
+- [ ] Mario Enrique Silva Benavides
+- [ ] Yasser Zanari
+- [ ] Vivek Motta
 
 ## Références projet
 
